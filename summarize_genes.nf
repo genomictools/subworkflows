@@ -6,7 +6,7 @@ include { CONVERT }     from '../modules/convert.nf'
 include { EXTRACT }     from '../modules/extract.nf'
 include { AGGREGATE }   from '../modules/aggregate.nf'
 
-variable_ch = Channel.of( 'rlist', 'snplist', 'frqx' )
+variable_ch = Channel.of( 'rlist', 'snplist', 'frqx', 'frq.strat' )
 
 workflow summarize_genes {
     take:
