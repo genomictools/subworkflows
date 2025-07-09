@@ -11,10 +11,12 @@ variable_ch = Channel.of( 'rlist', 'snplist', 'frqx' )
 workflow summarize_genes {
     take:
     genotypes
+    phenotypes
     annotations
 
     main:
     genotypes
+        | combine(phenotypes, by: 0)
         | CONVERT
         | combine(variable_ch)
         | EXTRACT
@@ -34,8 +36,13 @@ workflow  {
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, row.category, row.file, row.index, row.n_vars ] }
     
+    phenotypes_ch = Channel.fromPath(params.phenotypes)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, file(row.phenotype) ] }
+        | unique
+
     annotations_ch = Channel.fromPath(params.annotations)
         | map { row -> [ row.cohort, row.key, row.category, row.variable, row.file ] }
 
-    summarize_genes( genotypes_ch, annotations_ch )
+    summarize_genes( genotypes_ch, phenotypes_ch, annotations_ch )
 }
