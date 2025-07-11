@@ -1,0 +1,52 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl=2
+
+include { EXTRACT }   from '../modules/extract.nf'
+include { ADJUST }    from '../modules/adjust.nf'
+include { DETECT }    from '../modules/detect.nf'
+
+type_ch = Channel.of(params.type.split(','))
+format_ch = Channel.of( 'bed', 'tab')
+
+workflow call_alternates {
+    take: 
+    gtc
+    pfb
+    gcm
+    hmm
+    genes
+    links
+
+    main:
+    gtc
+        | EXTRACT
+        | ( params.adjust ? combine(gcm) : map { it } )
+        | ( params.adjust ? ADJUST       : map { it } )
+        | combine(pfb)
+        | combine(hmm)
+        | combine(type_ch)
+        | DETECT
+        | branch {
+            cnv : it[1] == 'cnv'
+            loh : it[1] == 'loh'
+        }
+        | set { alternates }
+
+    emit:
+    signal = EXTRACT.out
+    cnv    = alternates.cnv
+    loh    = alternates.loh
+}
+
+workflow {
+    gtc     = Channel.fromPath(params.gtc) | map { [ it.simpleName, it ] }
+    hmm     = Channel.fromPath(params.hmm)
+    genes   = Channel.fromPath(params.refgene)
+    links   = Channel.fromPath(params.reflink)
+
+    pfb = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
+    gcm = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
+
+    call_alternates(gtc, pfb, gcm, hmm, genes, links)
+}
