@@ -8,7 +8,7 @@ include { AGGREGATE }   from '../modules/aggregate.nf'
 
 variable_ch = Channel.of( 'rlist', 'snplist', 'frqx', 'frq.strat' )
 
-workflow summarize_genes {
+workflow summarize_cases {
     take:
     genotypes
     phenotypes
@@ -44,5 +44,5 @@ workflow  {
     annotations_ch = Channel.fromPath(params.annotations)
         | map { row -> [ row.cohort, row.key, row.category, row.variable, row.file ] }
 
-    summarize_genes( genotypes_ch, phenotypes_ch, annotations_ch )
+    summarize_cases( genotypes_ch, phenotypes_ch, annotations_ch )
 }
