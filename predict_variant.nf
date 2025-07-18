@@ -33,7 +33,7 @@ workflow {
     // Define input from file
     variants_ch = Channel.fromPath(params.cohort_info)
         | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort, row.variant, row.organism, row.ontology, row.assay, row.sequence_length ]}
+        | map { row -> [ row.cohort, row.variant, row.ontology, row.assay, row.sequence_length ]}
 
     predict_variant(variants_ch)
 }
