@@ -12,6 +12,7 @@ workflow get_coordinates {
     
     main:
     COORDINATES(coords, genome, style)
+        | view
         | transpose
         | set { bed }
 
@@ -33,11 +34,11 @@ workflow get_coordinates {
 workflow  {
     coords_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
-        | map { row -> [ cohort: row.cohort, chrom: row.chrom, start: row.start, end: row.end ] }
+        | map { row -> [ cohort: row.cohort, chrom: row.chrom, start: row.start, end: row.end, genelist: file(row.genelist) ] }
         | map { it -> 
             chrom = it.chrom ?: (1..22).collect { "chr$it" } + ['chrX', 'chrY']
             key   = (it.start && it.end) ? "${chrom}:${it.start}-${it.end}" : chrom
-            [ it.cohort, key, chrom, it.start ?: null, it.end ?: null]
+            [ it.cohort, key, chrom, it.start ?: null, it.end ?: null, it.genelist ? file(it.genelist) : null ]
         }
         | transpose
         | unique
