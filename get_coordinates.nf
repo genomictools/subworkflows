@@ -12,7 +12,6 @@ workflow get_coordinates {
     
     main:
     COORDINATES(coords, genome, style)
-        | view
         | transpose
         | set { bed }
 
