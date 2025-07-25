@@ -11,12 +11,12 @@ variable_ch = Channel.of( 'rlist', 'snplist', 'frqx', 'frq.strat' )
 workflow summarize_cases {
     take:
     genotypes
-    phenotypes
+    pedigree
     annotations
 
     main:
     genotypes
-        | combine(phenotypes, by: 0)
+        | combine(pedigree, by: 0)
         | CONVERT
         | combine(variable_ch)
         | EXTRACT
@@ -36,7 +36,7 @@ workflow  {
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, row.category, row.file, row.index, row.n_vars ] }
     
-    phenotypes_ch = Channel.fromPath(params.phenotypes)
+    pedigree_ch = Channel.fromPath(params.pedigree)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, file(row.phenotype) ] }
         | unique
@@ -44,5 +44,5 @@ workflow  {
     annotations_ch = Channel.fromPath(params.annotations)
         | map { row -> [ row.cohort, row.key, row.category, row.variable, row.file ] }
 
-    summarize_cases( genotypes_ch, phenotypes_ch, annotations_ch )
+    summarize_cases( genotypes_ch, pedigree_ch, annotations_ch )
 }

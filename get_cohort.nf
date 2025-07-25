@@ -30,7 +30,7 @@ workflow  {
         | map { row -> [
             row.cohort,
             file(row.file), file(row.index),
-            file(row.samples)
+            file(row.pedigree)
         ] }
         | unique
         
