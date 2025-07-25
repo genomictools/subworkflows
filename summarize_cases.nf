@@ -6,7 +6,8 @@ include { CONVERT }     from '../modules/convert.nf'
 include { EXTRACT }     from '../modules/extract.nf'
 include { AGGREGATE }   from '../modules/aggregate.nf'
 
-variable_ch = Channel.of( 'rlist', 'snplist', 'frqx', 'frq.strat' )
+category_ch = Channel.of(params.categories.split(','))
+variable_ch = Channel.of(params.variables.split(','))
 
 workflow summarize_cases {
     take:
