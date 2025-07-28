@@ -41,7 +41,7 @@ workflow  {
         }
         | transpose
         | unique
-        | groupTuple(by: [1,2,3,4])
+        | groupTuple(by: [1,2,3,4,5])
     
     get_coordinates( coords_ch, params.genome, params.style )
 }
