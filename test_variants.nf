@@ -8,34 +8,34 @@ include { COMBINE }     from '../modules/combine.nf'
 include { TEST }        from '../modules/test.nf'
 include { PLOT }        from '../modules/plot.nf'
 
-test_ch      = Channel.of(params.tests.split(','))
+test_ch = Channel.of(params.tests.split(','))
 
 workflow test_variants {
     take:
     genotypes
-    
+
     main:
     genotypes
         | CONVERT
-        | PRUNE
-        | groupTuple(by: 0)
+        | ( params.prune ? PRUNE : map { it } )
+        | groupTuple(by: [0, 2])
         | COMBINE
         | combine(test_ch)
         | TEST
-        | PLOT
+        | ( params.plot ? PLOT : map { it })
 
     emit:
     tests = TEST.out
-    plots = PLOT.out
 }
 
 workflow  {
-    genotypes_ch = Channel.fromPath(params.genotypes)
+    genotypes_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [
-            row.cohort, row.key,
-            file(row.file), file(row.index), file(row.samples)
+            row.cohort,row.key,row.category,file(row.file),file(row.index),
+            row.n_samples,row.n_variants,
+            file(row.phenotype)
         ] }
 
-    test_variants(genotypes_ch)
+    test_variants( genotypes_ch )
 }
