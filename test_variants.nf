@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 include { CONVERT }     from '../modules/convert.nf'
 include { PRUNE }       from '../modules/prune.nf'
 include { COMBINE }     from '../modules/combine.nf'
+include { FILTER }      from '../modules/filter.nf'
 include { TEST }        from '../modules/test.nf'
 include { PLOT }        from '../modules/plot.nf'
 
@@ -23,6 +24,7 @@ workflow test_variants {
         | ( params.prune ? PRUNE : map { it } )
         | groupTuple(by: [0, 2])
         | COMBINE
+        | ( params.filter ? FILTER : map { it } )
         | combine(test_ch)
         | combine(phenotypes, by: 0)
         | TEST
@@ -31,7 +33,6 @@ workflow test_variants {
             def phenotype = it[3].name.split('\\.')[2]
             [ it[0], it[1], it[2], phenotype, it[3], it[4], it[5] ]
         }
-        | view
         | ( params.plot ? PLOT : map { it })
 
     emit:
