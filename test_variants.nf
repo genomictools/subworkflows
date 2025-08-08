@@ -21,10 +21,10 @@ workflow test_variants {
     genotypes
         | combine(pedigree, by: 0)
         | CONVERT
-        | ( params.prune ? PRUNE : map { it } )
         | groupTuple(by: [0, 2])
         | COMBINE
         | ( params.filter ? FILTER : map { it } )
+        | ( params.prune  ? PRUNE  : map { it } )
         | combine(test_ch)
         | combine(phenotypes, by: 0)
         | TEST
