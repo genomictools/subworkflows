@@ -13,15 +13,25 @@ test_ch = Channel.of(params.tests.split(','))
 workflow test_variants {
     take:
     genotypes
+    pedigree
+    phenotypes
 
     main:
     genotypes
+        | combine(pedigree, by: 0)
         | CONVERT
         | ( params.prune ? PRUNE : map { it } )
         | groupTuple(by: [0, 2])
         | COMBINE
         | combine(test_ch)
+        | combine(phenotypes, by: 0)
         | TEST
+        | transpose
+        | map { it -> 
+            def phenotype = it[3].name.split('\\.')[2]
+            [ it[0], it[1], it[2], phenotype, it[3], it[4], it[5] ]
+        }
+        | view
         | ( params.plot ? PLOT : map { it })
 
     emit:
@@ -33,9 +43,18 @@ workflow  {
         | splitCsv(header: true, sep: ',')
         | map { row -> [
             row.cohort,row.key,row.category,file(row.file),file(row.index),
-            row.n_samples,row.n_variants,
-            file(row.phenotype)
+            row.n_samples,row.n_variants
         ] }
 
-    test_variants( genotypes_ch )
+    pedigree_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort,file(row.pedigree) ] }
+        | unique
+
+    phenotypes_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort,file(row.phenotypes) ] }
+        | unique
+
+    test_variants( genotypes_ch, pedigree_ch, phenotypes_ch )
 }
