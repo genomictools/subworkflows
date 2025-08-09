@@ -9,13 +9,13 @@ workflow prepare_references {
     take:
     dbsnp
     snplist
-    gcm
+    gc
     
     main:
     dbsnp 
-        | combine(snplist) 
-        | PFB 
-        | combine(gcm) 
+        | combine(snplist)
+        | PFB
+        | combine(gc)
         | GCM
 
     emit:
@@ -26,7 +26,7 @@ workflow prepare_references {
 workflow {
     dbsnp   = Channel.fromFilePairs(params.dbsnp, flat: true)
     snplist = Channel.fromPath(params.snplist)
-    gcm     = Channel.fromPath(params.gc)
-    
-    ref = prepare_references(dbsnp, snplist, gcm)
+    gc      = Channel.fromPath(params.gc)
+
+    ref = prepare_references(dbsnp, snplist, gc)
 }

@@ -15,6 +15,7 @@ workflow call_alternates {
     pfb
     gcm
     hmm
+    hmm0
     genes
     links
 
@@ -25,6 +26,7 @@ workflow call_alternates {
         | ( params.adjust ? ADJUST       : map { it } )
         | combine(pfb)
         | combine(hmm)
+        | combine(hmm0)
         | combine(type_ch)
         | DETECT
         | branch {
@@ -42,11 +44,12 @@ workflow call_alternates {
 workflow {
     gtc     = Channel.fromPath(params.gtc) | map { [ it.simpleName, it ] }
     hmm     = Channel.fromPath(params.hmm)
+    hmm0    = Channel.fromPath(params.hmm0)
     genes   = Channel.fromPath(params.refgene)
     links   = Channel.fromPath(params.reflink)
 
     pfb = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
-    call_alternates(gtc, pfb, gcm, hmm, genes, links)
+    call_alternates(gtc, pfb, gcm, hmm, hmm0, genes, links)
 }
