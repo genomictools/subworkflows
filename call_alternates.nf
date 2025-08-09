@@ -30,8 +30,8 @@ workflow call_alternates {
         | combine(type_ch)
         | DETECT
         | branch {
-            cnv : it[1] == 'cnv'
-            loh : it[1] == 'loh'
+            cnv : it[2] == 'cnv'
+            loh : it[2] == 'loh'
         }
         | set { alternates }
 
@@ -42,7 +42,10 @@ workflow call_alternates {
 }
 
 workflow {
-    gtc     = Channel.fromPath(params.gtc) | map { [ it.simpleName, it ] }
+    gtc_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, row.key, file(row.file) ] }
+
     hmm     = Channel.fromPath(params.hmm)
     hmm0    = Channel.fromPath(params.hmm0)
     genes   = Channel.fromPath(params.refgene)
@@ -51,5 +54,5 @@ workflow {
     pfb = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
-    call_alternates(gtc, pfb, gcm, hmm, hmm0, genes, links)
+    call_alternates(gtc_ch, pfb, gcm, hmm, hmm0, genes, links)
 }

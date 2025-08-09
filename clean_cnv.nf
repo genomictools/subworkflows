@@ -21,9 +21,8 @@ workflow clean_cnv {
         | FILTER
         | combine(pfb)
         | CLEAN
-        | map { ['scanned', it.last()] }
         | groupTuple(by: 0)
-        | combine(genes )
+        | combine(genes)
         | combine(links)
         | SCAN
         | combine(format_ch)
