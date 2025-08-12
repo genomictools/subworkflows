@@ -23,17 +23,23 @@ workflow call_alternates {
     main:
     gtc
         | EXTRACT
+        | filter { it.last().toInteger() > 1 }
         | ( params.adjust ? combine(gcm) : map { it } )
         | ( params.adjust ? ADJUST       : map { it } )
+        | filter { it.last().toInteger() > 1 }
         | combine(pfb)
         | combine(hmm)
         | combine(hmm0)
         | combine(type_ch)
         | DETECT
+        | filter { it.last().toInteger() > 1 }
         | filter { it[2] == 'cnv' }
         | ( params.filter ? FILTER       : map { it } )
+        | filter { it.last().toInteger() > 1 }
+        | view
         | ( params.filter ? combine(pfb) : map { it } )
         | ( params.clean  ? CLEAN        : map { it } )
+        | filter { it.last().toInteger() > 1 }
         | set { cnv }
 
     Channel.empty()
