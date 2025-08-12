@@ -7,7 +7,8 @@ include { CLEAN }     from '../modules/clean.nf'
 include { SCAN }      from '../modules/scan.nf'
 include { VISUALIZE } from '../modules/visualize.nf'
 
-format_ch = Channel.of( 'bed', 'tab')
+format_ch   = Channel.of('bed', 'tab')
+features_ch = Channel.of('gene', 'exon', 'none')
 
 workflow clean_cnv {
     take: 
@@ -24,7 +25,9 @@ workflow clean_cnv {
         | groupTuple(by: 0)
         | combine(genes)
         | combine(links)
+        | combine(features_ch)
         | SCAN
+        | filter { it[1] != 'none' }
         | combine(format_ch)
         | VISUALIZE
 
