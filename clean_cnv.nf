@@ -22,7 +22,7 @@ workflow clean_cnv {
         | FILTER
         | combine(pfb)
         | CLEAN
-        | groupTuple(by: 0)
+        | groupTuple(by: [0, 2])
         | combine(genes)
         | combine(links)
         | combine(features_ch)

@@ -12,7 +12,7 @@ workflow assess_quality {
     main:
     signal
         | combine(cnv, by: [0,1])
-        | groupTuple(by: [0,1])
+        | groupTuple(by: [0,1,4])
         | ASSESS
 
     emit:
