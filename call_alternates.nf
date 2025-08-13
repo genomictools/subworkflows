@@ -36,7 +36,6 @@ workflow call_alternates {
         | filter { it[2] == 'cnv' }
         | ( params.filter ? FILTER       : map { it } )
         | filter { it.last().toInteger() > 1 }
-        | view
         | ( params.filter ? combine(pfb) : map { it } )
         | ( params.clean  ? CLEAN        : map { it } )
         | filter { it.last().toInteger() > 1 }
