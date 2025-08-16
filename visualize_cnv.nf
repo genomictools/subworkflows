@@ -28,11 +28,16 @@ workflow visualize_cnv {
         | filter { it.last().toInteger() > 1 }
         | set { annotated }
     
+    if ( params.export ) {
     annotated
         | combine(format_ch)
         | EXPORT
         | set { tables }
+    } else {
+        Channel.empty() | set { tables }
+    }
 
+    if ( params.plot ) {
     signal
         | ( params.adjust ? filter { it[2] == 'adjusted' } : map { it } )
         | groupTuple(by: [ 0, 2 ])
@@ -41,16 +46,18 @@ workflow visualize_cnv {
     annotated
         | filter { it[1] == 'gene' }
         | combine(plot_signal, by: 0)
-        | view
         | combine(pfb)
         | combine(plot_type_ch)
         | PLOT
         | set { plots }
+    } else {
+        Channel.empty() | set { plots }
+    }
 
-    // emit:
-    // annotated
-    // tables
-    // plots
+    emit:
+    annotated
+    tables
+    plots
 }
 
 workflow {
