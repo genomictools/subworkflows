@@ -20,7 +20,6 @@ workflow visualize_cnv {
 
     main:
     cnv
-        | groupTuple(by: [0, 2])
         | combine(genes)
         | combine(links)
         | combine(features_ch)
