@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 include { EXTRACT }   from '../modules/extract.nf'
 include { ADJUST }    from '../modules/adjust.nf'
 include { DETECT }    from '../modules/detect.nf'
+include { COMBINE }   from '../modules/combine.nf'
 
 workflow call_alternates {
     take: 
@@ -22,6 +23,10 @@ workflow call_alternates {
         | ( params.adjust ? ADJUST       : map { it } )
         | filter { it.last().toInteger() > 1 }
         | set { signal }
+    
+    signal 
+        | groupTuple(by: [0, 2]) 
+        | set { combined_signal }
 
     // call alternates
     signal
@@ -30,10 +35,15 @@ workflow call_alternates {
         | DETECT
         | filter { it.last().toInteger() > 1 }
         | set { calls }
+    
+    calls
+        | groupTuple(by: [0, 2]) 
+        | COMBINE
+        | set { combined_calls }
 
     emit:
-    signal
-    calls
+    signal = combined_signal
+    calls  = combined_calls
 }
 
 workflow {

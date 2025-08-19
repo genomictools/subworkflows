@@ -5,7 +5,6 @@ nextflow.enable.dsl=2
 include { EXCLUDE }   from '../modules/exclude.nf'
 include { FILTER }    from '../modules/filter.nf'
 include { CLEAN }     from '../modules/clean.nf'
-include { COMBINE }   from '../modules/combine.nf'
 
 workflow clean_calls {
     take: 
@@ -23,11 +22,10 @@ workflow clean_calls {
         | ( params.filter ? combine(pfb) : map { it } )
         | ( params.clean  ? CLEAN        : map { it } )
         | filter { it.last().toInteger() > 1 }
-        | groupTuple(by: [0, 2])
-        | COMBINE
+        | set { cleaned }
 
     emit:
-    calls = COMBINE.out
+    calls = cleaned
 }
 
 workflow {

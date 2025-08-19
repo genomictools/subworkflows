@@ -18,7 +18,6 @@ workflow visualize_cnv {
     genes
     links
 
-
     main:
     // annotate calls
     calls
@@ -43,7 +42,6 @@ workflow visualize_cnv {
     if ( params.plot ) {
     annotated
         | combine(signal, by: 0)
-        | groupTuple(by: [ 0,1,2,3,4,7 ])
         | combine(pfb)
         | combine(plot_type_ch)
         | PLOT
