@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { SCAN }      from '../modules/scan.nf'
+include { ANNOTATE }  from '../modules/annotate.nf'
 include { EXPORT }    from '../modules/export.nf'
 include { PLOT }      from '../modules/plot.nf'
 
@@ -24,7 +24,7 @@ workflow visualize_cnv {
         | combine(genes)
         | combine(links)
         | combine(features_ch)
-        | SCAN
+        | ANNOTATE
         | filter { it.last().toInteger() > 1 }
         | set { annotated }
     
