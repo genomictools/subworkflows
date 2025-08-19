@@ -12,14 +12,16 @@ plot_type_ch= Channel.of(params.plot_type.split(','))
 
 workflow visualize_cnv {
     take: 
-    cnv
+    calls
+    pfb
+    signal
     genes
     links
-    signal
-    pfb
+
 
     main:
-    cnv
+    // annotate calls
+    calls
         | combine(genes)
         | combine(links)
         | combine(features_ch)
@@ -27,6 +29,7 @@ workflow visualize_cnv {
         | filter { it.last().toInteger() > 1 }
         | set { annotated }
     
+    // export as tables
     if ( params.export ) {
     annotated
         | combine(format_ch)
@@ -36,15 +39,11 @@ workflow visualize_cnv {
         Channel.empty() | set { tables }
     }
 
+    // plot calls
     if ( params.plot ) {
-    signal
-        | ( params.adjust ? filter { it[2] == 'adjusted' } : map { it } )
-        | groupTuple(by: [ 0, 2 ])
-        | set { plot_signal }
-
     annotated
-        | filter { it[1] == 'gene' }
-        | combine(plot_signal, by: 0)
+        | combine(signal, by: 0)
+        | groupTuple(by: [ 0,1,2,3,4,7 ])
         | combine(pfb)
         | combine(plot_type_ch)
         | PLOT
@@ -60,15 +59,14 @@ workflow visualize_cnv {
 }
 
 workflow {
-    cnv     = Channel.fromPath(params.cnv) | map { [ it.simpleName, it ] }
-    genes   = Channel.fromPath(params.refgene)
-    links   = Channel.fromPath(params.reflink)
-
+    calls   = Channel.fromPath(params.calls) | map { [ it.simpleName, it ] }
     signal  = Channel.fromPath(params.signal)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, row.level, file(row.file), file(row.log), row.nmarkers ] }
     
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
+    genes   = Channel.fromPath(params.refgene)
+    links   = Channel.fromPath(params.reflink)
 
-    visualize_cnv(cnv, genes, links, signal, pfb)
+    visualize_cnv(calls, pfb, signal, genes, links)
 }

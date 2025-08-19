@@ -6,15 +6,12 @@ include { EXTRACT }   from '../modules/extract.nf'
 include { ADJUST }    from '../modules/adjust.nf'
 include { DETECT }    from '../modules/detect.nf'
 
-type_ch     = Channel.of(params.type.split(','))
-
 workflow call_alternates {
     take: 
     gtc
     pfb
     gcm
     hmm
-    hmm0
 
     main:
     // Extract and adjust signal
@@ -28,22 +25,15 @@ workflow call_alternates {
 
     // call alternates
     signal
-        | combine(pfb)
         | combine(hmm)
-        | combine(hmm0)
-        | combine(type_ch)
+        | combine(pfb)
         | DETECT
         | filter { it.last().toInteger() > 1 }
-        | branch { 
-            cnv : it[2] == 'cnv'
-            loh : it[2] == 'loh'
-        }
         | set { calls }
 
     emit:
     signal
-    cnv = calls.cnv
-    loh = calls.loh
+    calls
 }
 
 workflow {
@@ -53,8 +43,11 @@ workflow {
 
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm     = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
-    hmm     = Channel.fromPath(params.hmm)
-    hmm0    = Channel.fromPath(params.hmm0)
+    type_ch = Channel.of(params.type.split(','))
+    hmm     = Channel.empty()
+        | ( params.hmm  != null ? concat(Channel.of(['cnv', file(params.hmm)]))  : Channel.empty() )
+        | ( params.hmm0 != null ? concat(Channel.of(['loh', file(params.hmm0)])) : Channel.empty() )
+        | combine(type_ch, by: 0)
 
-    call_alternates(gtc_ch, pfb, gcm, hmm, hmm0)
+    call_alternates(gtc_ch, pfb, gcm, hmm)
 }

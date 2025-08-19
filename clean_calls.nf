@@ -9,12 +9,12 @@ include { COMBINE }   from '../modules/combine.nf'
 
 workflow clean_calls {
     take: 
-    cnv
+    calls
     pfb
     exclude
 
     main:
-    cnv
+    calls
         | ( params.filter ? FILTER       : map { it } )
         | filter { it.last().toInteger() > 1 }
         | ( params.exclude ? combine(exclude) : map { it } )
@@ -25,16 +25,15 @@ workflow clean_calls {
         | filter { it.last().toInteger() > 1 }
         | groupTuple(by: [0, 2])
         | COMBINE
-        | set { cleaned }
 
     emit:
-    cnv = cleaned
+    calls = COMBINE.out
 }
 
 workflow {
-    cnv     = Channel.fromPath(params.cnv) | map { [ it.simpleName, it ] }
+    calls   = Channel.fromPath(params.cnv) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     exclude = Channel.fromPath(params.exclude_regions)
 
-    clean_calls(cnv, pfb, exclude)
+    clean_calls(calls, pfb, exclude)
 }
