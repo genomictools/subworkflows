@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 include { ANNOTATE }  from '../modules/annotate.nf'
 include { EXPORT }    from '../modules/export.nf'
 include { HEATMAP }   from '../modules/heatmap.nf'
+include { SCATTER }   from '../modules/scatter.nf'
 
 format_ch   = Channel.of(params.format.split(','))
 features_ch = Channel.of(params.features.split(','))
@@ -16,6 +17,7 @@ workflow visualize_cnv {
     signal
     genes
     links
+    genelist
 
     main:
     // annotate calls
@@ -46,6 +48,24 @@ workflow visualize_cnv {
         Channel.empty() | set { plots }
     }
 
+    if ( params.scatter ) {
+    annotated
+        | splitCsv(elem: 3, header: false, strip: true, sep: "\t")
+        | map { cohort, feature, type, row, log, nmarkers ->
+            def gene = row[1].split(',').toList()
+            return [cohort, gene, row[0] ]
+        }
+        | transpose
+        | unique()
+        | groupTuple(by: [0,1])
+        | ( params.genelist != null ? combine(genelist, by: [0,1]) : map { it })
+        | combine(signal, by: 0)
+        | combine(pfb)
+        | SCATTER
+    } else {
+        Channel.empty() | set { plots }
+    }
+
     emit:
     annotated
     tables
@@ -62,5 +82,10 @@ workflow {
     genes   = Channel.fromPath(params.refgene)
     links   = Channel.fromPath(params.reflink)
 
-    visualize_cnv(calls, pfb, signal, genes, links)
+    genelist_ch = Channel.empty()
+        | ( params.genelist != null ? concat(Channel.of(file(params.genelist))) : Channel.empty() )
+        | splitCsv(header: true)
+        | map { row -> [ row.cohort, row.gene ] }
+
+    visualize_cnv(calls, pfb, signal, genes, links, genelist_ch)
 }
