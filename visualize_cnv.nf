@@ -30,26 +30,25 @@ workflow visualize_cnv {
         | set { annotated }
     
     // export as tables
+    Channel.empty() | set { tables }
     if ( params.export ) {
     annotated
         | combine(format_ch)
         | EXPORT
         | set { tables }
-    } else {
-        Channel.empty() | set { tables }
     }
 
     // plot calls
-    cohort_gene = genelist | groupTuple(by: 0)
+    genelist | groupTuple(by: 0) | set { cohort_gene }
+    Channel.empty() | set { heatmaps }
     if ( params.heatmap ) {
     annotated
         | combine(cohort_gene, by: 0)
         | HEATMAP
-        | set { plots }
-    } else {
-        Channel.empty() | set { plots }
+        | set { heatmaps }
     }
 
+    Channel.empty() | set { scatter_plots }
     if ( params.scatter ) {
     annotated
         | splitCsv(elem: 3, header: false, strip: true, sep: "\t")
@@ -64,14 +63,14 @@ workflow visualize_cnv {
         | combine(signal, by: 0)
         | combine(pfb)
         | SCATTER
-    } else {
-        Channel.empty() | set { plots }
+        | set { scatter_plots }
     }
 
     emit:
     annotated
     tables
-    plots
+    heatmaps
+    scatter_plots
 }
 
 workflow {
