@@ -4,11 +4,10 @@ nextflow.enable.dsl=2
 
 include { ANNOTATE }  from '../modules/annotate.nf'
 include { EXPORT }    from '../modules/export.nf'
-include { PLOT }      from '../modules/plot.nf'
+include { HEATMAP }   from '../modules/heatmap.nf'
 
 format_ch   = Channel.of(params.format.split(','))
 features_ch = Channel.of(params.features.split(','))
-plot_type_ch= Channel.of(params.plot_type.split(','))
 
 workflow visualize_cnv {
     take: 
@@ -39,12 +38,9 @@ workflow visualize_cnv {
     }
 
     // plot calls
-    if ( params.plot ) {
+    if ( params.heatmap ) {
     annotated
-        | combine(signal, by: 0)
-        | combine(pfb)
-        | combine(plot_type_ch)
-        | PLOT
+        | HEATMAP
         | set { plots }
     } else {
         Channel.empty() | set { plots }
