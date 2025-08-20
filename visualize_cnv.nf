@@ -40,8 +40,10 @@ workflow visualize_cnv {
     }
 
     // plot calls
+    cohort_gene = genelist | groupTuple(by: 0)
     if ( params.heatmap ) {
     annotated
+        | combine(cohort_gene, by: 0)
         | HEATMAP
         | set { plots }
     } else {
