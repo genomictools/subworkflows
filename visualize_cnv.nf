@@ -43,6 +43,7 @@ workflow visualize_cnv {
     Channel.empty() | set { heatmaps }
     if ( params.heatmap ) {
     annotated
+        | filter { it.last().toInteger() > 10 }
         | combine(cohort_gene, by: 0)
         | HEATMAP
         | set { heatmaps }
@@ -50,17 +51,23 @@ workflow visualize_cnv {
 
     Channel.empty() | set { scatter_plots }
     if ( params.scatter ) {
+    signal
+        | groupTuple(by: 0) 
+        | set { combined_signal }
+
     annotated
-        | splitCsv(elem: 3, header: false, strip: true, sep: "\t")
-        | map { cohort, feature, type, row, log, nmarkers ->
+        | splitCsv(elem: 4, header: false, strip: true, sep: "\t")
+        // | take(3)
+        | map {cohort, tool, feature, type, row, log, nmarkers -> 
+            def cnv  = row[0]
             def gene = row[1].split(',').toList()
-            return [cohort, gene, row[0] ]
+            return [ cohort, gene, cnv ]
         }
         | transpose
-        | unique()
+        | unique
         | groupTuple(by: [0,1])
         | ( params.genelist != null ? combine(genelist, by: [0,1]) : map { it })
-        | combine(signal, by: 0)
+        | combine(combined_signal, by: 0)
         | combine(pfb)
         | SCATTER
         | set { scatter_plots }

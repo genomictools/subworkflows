@@ -4,13 +4,15 @@ nextflow.enable.dsl=2
 
 include { PFB } from '../modules/pfb.nf'
 include { GCM } from '../modules/gcm.nf'
+include { LEVELS } from '../modules/levels.nf'
 
 workflow prepare_references {
     take:
     dbsnp
     snplist
     gc
-    
+    tools
+
     main:
     dbsnp 
         | combine(snplist)
@@ -18,9 +20,14 @@ workflow prepare_references {
         | combine(gc)
         | GCM
 
+    tools
+        | filter { it == 'quantisnp' }
+        | LEVELS
+
     emit:
     pfb = PFB.out
     gcm = GCM.out
+    levels = LEVELS.out
 }
 
 workflow {

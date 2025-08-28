@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { EXCLUDE }   from '../modules/exclude.nf'
 include { FILTER }    from '../modules/filter.nf'
+include { EXCLUDE }   from '../modules/exclude.nf'
 include { CLEAN }     from '../modules/clean.nf'
 
 workflow clean_calls {
@@ -15,13 +15,13 @@ workflow clean_calls {
     main:
     calls
         | ( params.filter ? FILTER       : map { it } )
-        | filter { it.last().toInteger() > 1 }
+        | filter { it.last().toInteger() > 0 }
         | ( params.exclude ? combine(exclude) : map { it } )
         | ( params.exclude ? EXCLUDE          : map { it } )
-        | filter { it.last().toInteger() > 1 }
-        | ( params.filter ? combine(pfb) : map { it } )
+        | filter { it.last().toInteger() > 0 }
+        | ( params.clean ? combine(pfb) : map { it } )
         | ( params.clean  ? CLEAN        : map { it } )
-        | filter { it.last().toInteger() > 1 }
+        | filter { it.last().toInteger() > 0 }
         | set { cleaned }
 
     emit:

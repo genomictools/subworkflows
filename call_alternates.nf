@@ -2,48 +2,82 @@
 
 nextflow.enable.dsl=2
 
-include { EXTRACT }   from '../modules/extract.nf'
-include { ADJUST }    from '../modules/adjust.nf'
-include { DETECT }    from '../modules/detect.nf'
+include { PENNCNV }   from '../modules/penncnv.nf'
+include { QUANTISNP } from '../modules/quantisnp.nf'
+include { RGADA }     from '../modules/rgada.nf'
+include { CONVERT }   from '../modules/convert.nf'
 include { COMBINE }   from '../modules/combine.nf'
 
 workflow call_alternates {
     take: 
-    gtc
+    signal
     pfb
-    gcm
     hmm
+    levels
+    type
+    tools
 
     main:
-    // Extract and adjust signal
-    gtc
-        | EXTRACT
-        | filter { it.last().toInteger() > 1 }
-        | ( params.adjust ? combine(gcm) : map { it } )
-        | ( params.adjust ? ADJUST       : map { it } )
-        | filter { it.last().toInteger() > 1 }
-        | set { signal }
-    
-    signal 
-        | groupTuple(by: [0, 2]) 
-        | set { combined_signal }
-
-    // call alternates
-    signal
-        | combine(hmm)
+    // PENNCNV
+    tools
+        | filter { it == 'penncnv' }
+        | combine(type)
+        | combine(hmm, by: 1)
+        | map {[ it[1], it[0], it[2]]}
         | combine(pfb)
-        | DETECT
+        | set { req }
+
+    signal
+        | filter { it[2] == 'adjusted' }
+        | combine(req)
+        | PENNCNV
         | filter { it.last().toInteger() > 1 }
-        | set { calls }
-    
-    calls
-        | groupTuple(by: [0, 2]) 
+        | set { penncnv }
+
+    // QUANTISNP
+    tools
+        | filter { it == 'quantisnp' }
+        | combine(levels, by: 0)
+        | set { req }
+
+    signal
+        | filter { it[2] == 'merged' }
+        | combine(req)
+        | QUANTISNP
+        | map {[
+            it[0], it[1], it[2],
+            it[3].split(',').toList(),
+            it[4], it[5],
+            it[6].split(',').toList()
+        ]}
+        | transpose
+        | filter { it.last().toInteger() > 1 }
+        | set { quantisnp }
+
+    // QUANTISNP
+    tools
+        | filter { it == 'rgada' }
+        | combine(Channel.of("cnv"))
+        | set { req }
+
+    signal
+        | filter { it[2] == 'merged' }
+        | combine(req)
+        | RGADA
+        | filter { it.last().toInteger() > 1 }
+        | set { rgada }
+
+    // Combine calls
+    quantisnp
+        | concat(rgada)
+        | combine(pfb)
+        | CONVERT
+        | concat(penncnv)
+        | groupTuple(by: [0, 2, 3])
         | COMBINE
-        | set { combined_calls }
 
     emit:
-    signal = combined_signal
-    calls  = combined_calls
+    calls = COMBINE.out
 }
 
 workflow {
@@ -52,12 +86,15 @@ workflow {
         | map { row -> [ row.cohort, row.key, file(row.file) ] }
 
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
-    gcm     = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
+    levels  = Channel.fromPath(params.levels) | map { [ it.simpleName, it ] }
     type_ch = Channel.of(params.type.split(','))
     hmm     = Channel.empty()
         | ( params.hmm  != null ? concat(Channel.of(['cnv', file(params.hmm)]))  : Channel.empty() )
         | ( params.hmm0 != null ? concat(Channel.of(['loh', file(params.hmm0)])) : Channel.empty() )
         | combine(type_ch, by: 0)
 
-    call_alternates(gtc_ch, pfb, gcm, hmm)
+    type_ch  = Channel.of(params.type.split(','))
+    tools_ch = Channel.of(params.tools.split(','))
+
+    call_alternates(gtc_ch, pfb, hmm, levels, type_ch, tools_ch)
 }
