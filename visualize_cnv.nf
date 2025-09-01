@@ -57,15 +57,14 @@ workflow visualize_cnv {
 
     annotated
         | splitCsv(elem: 4, header: false, strip: true, sep: "\t")
-        // | take(3)
         | map {cohort, tool, feature, type, row, log, nmarkers -> 
             def cnv  = row[0]
             def gene = row[1].split(',').toList()
-            return [ cohort, gene, cnv ]
+            return [ cohort, gene, tool, cnv ]
         }
         | transpose
         | unique
-        | groupTuple(by: [0,1])
+        | groupTuple(by: [0,1,2])
         | ( params.genelist != null ? combine(genelist, by: [0,1]) : map { it })
         | combine(combined_signal, by: 0)
         | combine(pfb)
