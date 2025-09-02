@@ -29,7 +29,6 @@ workflow clean_calls {
     if (params.consensus) {
     cleaned
         | groupTuple(by: [0,2])
-        | filter { it[2] == 'cnv' }
         | CNVR
         | set { consensus }
     }

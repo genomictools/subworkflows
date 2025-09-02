@@ -44,6 +44,22 @@ workflow call_alternates {
         | filter { it[2] == 'merged' }
         | combine(req)
         | QUANTISNP
+        | set { quantisnp }
+
+    // RGADA
+    tools
+        | filter { it == 'rgada' }
+        | set { req }
+
+    signal
+        | filter { it[2] == 'merged' }
+        | combine(req)
+        | RGADA
+        | set { rgada }
+
+    // Combine calls
+    quantisnp
+        | concat(rgada)
         | map {[
             it[0], it[1], it[2],
             it[3].split(',').toList(),
@@ -52,32 +68,15 @@ workflow call_alternates {
         ]}
         | transpose
         | filter { it.last().toInteger() > 1 }
-        | set { quantisnp }
-
-    // QUANTISNP
-    tools
-        | filter { it == 'rgada' }
-        | combine(Channel.of("cnv"))
-        | set { req }
-
-    signal
-        | filter { it[2] == 'merged' }
-        | combine(req)
-        | RGADA
-        | filter { it.last().toInteger() > 1 }
-        | set { rgada }
-
-    // Combine calls
-    quantisnp
-        | concat(rgada)
         | combine(pfb)
         | CONVERT
         | concat(penncnv)
         | groupTuple(by: [0, 2, 3])
         | COMBINE
+        | set { calls }
 
     emit:
-    calls = COMBINE.out
+    calls
 }
 
 workflow {
