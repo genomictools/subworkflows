@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 // Include modules
 include { ALPHAGENOME } from '../modules/alphagenome.nf'
 include { RESHAPE }     from '../modules/reshape.nf'
+include { FORMAT }      from '../modules/format.nf'
 include { CONCATINATE } from '../modules/concatinate.nf'
 
 workflow run_alphagenome {
@@ -14,6 +15,7 @@ workflow run_alphagenome {
     main:
     variants
         | ALPHAGENOME
+        | FORMAT
         | RESHAPE
         | groupTuple(by: [0,1,2])
         | CONCATINATE
