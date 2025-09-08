@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 include { EXTRACT }   from '../modules/extract.nf'
 include { ADJUST }    from '../modules/adjust.nf'
 include { MERGE }     from '../modules/merge.nf'
+include { GENOTYPE }  from '../modules/genotype.nf'
 
 workflow prepare_signal {
     take: 
@@ -13,23 +14,48 @@ workflow prepare_signal {
     gcm
 
     main:
-    // Extract and adjust signal
+    // Extract genotype
+    genotype = Channel.empty()
+    if ( params.genotype ) {
+    gtc
+        | combine(pfb)
+        | GENOTYPE
+        | set { genotype }
+    }
+
+    // Extract (and adjust) signal
     gtc
         | EXTRACT
         | filter { it.last().toInteger() > 1 }
-        | ( params.adjust ? combine(gcm) : map { it } )
-        | ( params.adjust ? ADJUST       : map { it } )
-        | filter { it.last().toInteger() > 1 }
-        | ( params.merge ? combine(pfb) : map { it } )
-        | ( params.merge ? MERGE        : map { it } )
+        | set { raw }
 
-    EXTRACT.out
-        | ( params.adjust ? concat(ADJUST.out) : map { it } )
-        | ( params.adjust ? concat(MERGE.out)  : map { it } )
+    adjust = Channel.empty()
+    if ( params.adjust ) {
+    raw
+        | combine(gcm)
+        | ADJUST
+        | filter { it.last().toInteger() > 1 }
+        | set { adjust }
+    }
+
+    merge = Channel.empty()
+    if ( params.merge ) {
+    raw
+        | combine(pfb)
+        | MERGE
+        | filter { it.last().toInteger() > 1 }
+        | set { merge }
+    }
+
+    // Combine
+    raw
+        | concat(adjust)
+        | concat(merge)
         | set { signal }
 
     emit:
     signal
+    genotype
 }
 
 workflow {

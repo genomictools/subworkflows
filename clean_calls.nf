@@ -15,6 +15,7 @@ workflow clean_calls {
 
     main:
     calls
+        | filter { it[2] == 'cnv' } // TODO: remove when other types are supported
         | ( params.filter ? FILTER       : map { it } )
         | filter { it.last().toInteger() > 0 }
         | ( params.exclude ? combine(exclude) : map { it } )

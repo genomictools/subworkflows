@@ -7,10 +7,12 @@ include { QUANTISNP } from '../modules/quantisnp.nf'
 include { RGADA }     from '../modules/rgada.nf'
 include { CONVERT }   from '../modules/convert.nf'
 include { COMBINE }   from '../modules/combine.nf'
+include { PLINK }     from '../modules/plink.nf'
 
 workflow call_alternates {
     take: 
     signal
+    genotype
     pfb
     hmm
     levels
@@ -18,6 +20,19 @@ workflow call_alternates {
     tools
 
     main:
+    // PLINK
+    tools
+        | filter { it == 'plink' }
+        | combine(type)
+        | filter { it.last() == 'roh' }
+        | set { req }
+
+    genotype
+        | combine(req)
+        | PLINK
+        | filter { it.last().toInteger() > 1 }
+        | set { plink }
+
     // PENNCNV
     tools
         | filter { it == 'penncnv' }
@@ -80,9 +95,13 @@ workflow call_alternates {
 }
 
 workflow {
-    gtc_ch = Channel.fromPath(params.cohorts)
+    signal_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort, row.key, file(row.file) ] }
+        | map { row -> [ row.cohort, row.key, row.level, file(row.file), file(row.log), row.nmarkers ] }
+
+    genotype_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, row.key, row.level, file(row.file), file(row.log), row.nmarkers ] }
 
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     levels  = Channel.fromPath(params.levels) | map { [ it.simpleName, it ] }
@@ -95,5 +114,5 @@ workflow {
     type_ch  = Channel.of(params.type.split(','))
     tools_ch = Channel.of(params.tools.split(','))
 
-    call_alternates(gtc_ch, pfb, hmm, levels, type_ch, tools_ch)
+    call_alternates(signal_ch, genotype_ch, pfb, hmm, levels, type_ch, tools_ch)
 }
