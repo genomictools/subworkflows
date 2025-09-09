@@ -43,7 +43,7 @@ workflow call_alternates {
         | set { req }
 
     signal
-        | filter { it[2] == 'adjusted' }
+        | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
         | combine(req)
         | PENNCNV
         | filter { it.last().toInteger() > 1 }
