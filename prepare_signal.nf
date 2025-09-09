@@ -25,7 +25,12 @@ workflow prepare_signal {
 
     // Extract (and adjust) signal
     gtc
-        | EXTRACT
+        | ( params.extract ? EXTRACT : map {
+            cohort, key, file ->
+            def nmarkers = new File(file.toString()).readLines().size()
+            def log      = Path.of(file.simpleName + ".log")
+            [ cohort, key, 'raw', file, log, nmarkers ]
+        } )
         | filter { it.last().toInteger() > 1 }
         | set { raw }
 
@@ -60,7 +65,7 @@ workflow prepare_signal {
 
 workflow {
     gtc_ch = Channel.fromPath(params.cohorts)
-        | splitCsv(header: true, sep: ',§')
+        | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, file(row.file) ] }
     pfb    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm    = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
