@@ -4,11 +4,13 @@ nextflow.enable.dsl=2
 
 include { CCTEST }      from '../modules/cctest.nf'
 include { FAMILY }      from '../modules/family.nf'
+include { VALIDATE }    from '../modules/validate.nf'
 
 workflow test_calls {
     take:
     signal 
     calls
+    consensus
     pedigree
     pfb
     hmm 
@@ -26,23 +28,32 @@ workflow test_calls {
 
     // FAMILY
     signal
+        | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
         | groupTuple(by: [0,2]) 
         | set { combined_signal}
 
     calls
-        | map {[ it[0], it[2], it[1] ]}
+        | combine(test)
+        | filter { it.last() == 'family' }
+        | map {[ it[0], it[2], it[1], it[3], it[6] ]}
         | combine(hmm, by: 1)
-        | map {[ it[1], it[2], it[0], it[3] ]}
+        | map {[ it[1], it[2], it[0], it[3], it[4], it[5] ]}
         | combine(pfb)
         | combine(pedigree, by: 0)
         | combine(combined_signal, by: 0)
-        | set { req }
-
-    calls
-        | combine(test)
-        | filter { it.last() == 'family' }
-        | combine(req, by: [0,1,2])
         | FAMILY
+        // | set { tested }
+        | view
+
+    // Validation
+    consensus
+        | combine(test)
+        | filter { it.last() == 'validate' }
+        | combine(hmm, by: 1)
+        | map {[ it[1], it[0], it[3], it[6], it[7] ]}
+        | combine(pfb)
+        | combine(combined_signal, by: 0)
+        | VALIDATE
         | set { tested }
 
     emit:

@@ -12,6 +12,7 @@ workflow clean_calls {
     calls
     pfb
     exclude
+    cohort_size
 
     main:
     calls
@@ -30,6 +31,7 @@ workflow clean_calls {
     if (params.consensus) {
     cleaned
         | groupTuple(by: [0,2])
+        | combine(cohort_size, by: 0)
         | CNVR
         | set { consensus }
     }
@@ -43,6 +45,6 @@ workflow {
     calls   = Channel.fromPath(params.cnv) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     exclude = Channel.fromPath(params.exclude_regions)
-
-    clean_calls(calls, pfb, exclude)
+    cohort_size = calls.count().map { it as Integer }
+    clean_calls(calls, pfb, exclude, cohort_size)
 }
