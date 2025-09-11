@@ -4,8 +4,6 @@ nextflow.enable.dsl=2
 
 include { EXTRACT }   from '../modules/extract.nf'
 include { ADJUST }    from '../modules/adjust.nf'
-include { MERGE }     from '../modules/merge.nf'
-include { GENOTYPE }  from '../modules/genotype.nf'
 
 workflow prepare_signal {
     take: 
@@ -14,48 +12,40 @@ workflow prepare_signal {
     gcm
 
     main:
-    // Extract genotype
-    genotype = Channel.empty()
-    if ( params.genotype ) {
+    // Extract signal
     gtc
-        | combine(pfb)
-        | GENOTYPE
-        | set { genotype }
-    }
-
-    // Extract (and adjust) signal
-    gtc
-        | ( params.extract ? EXTRACT : map {
-            cohort, key, file ->
-            def nmarkers = new File(file.toString()).readLines().size()
-            def log      = Path.of(file.simpleName + ".log")
-            [ cohort, key, 'raw', file, log, nmarkers ]
-        } )
+        | ( params.extract ? combine(pfb) : map { it } )
+        | ( params.extract ? EXTRACT : map { it } )
+        | map { cohort, key, level, files ->
+            def level_list = level.tokenize(',')
+            def files_list = files instanceof List ? files : [files]
+            def nmark_list = files_list.collect { new File(it.toString()).readLines().size() }
+            def log_list   = files_list.collect { Path.of(it.baseName + ".log") }
+            [ cohort, key, level_list, files_list, log_list, nmark_list ]
+        }
+        | transpose
         | filter { it.last().toInteger() > 1 }
-        | set { raw }
+        | set { signal }
 
+    // Genotype
+    signal
+        | filter { it[2] == 'genotype' }
+        | set { genotype }
+
+    // Adjust with GC
     adjust = Channel.empty()
     if ( params.adjust ) {
-    raw
-        | combine(gcm)
-        | ADJUST
-        | filter { it.last().toInteger() > 1 }
-        | set { adjust }
-    }
-
-    merge = Channel.empty()
-    if ( params.merge ) {
-    raw
-        | combine(pfb)
-        | MERGE
-        | filter { it.last().toInteger() > 1 }
-        | set { merge }
+        signal
+            | filter { it[2] == 'raw' }
+            | combine(gcm)
+            | ADJUST
+            | filter { it.last().toInteger() > 1 }
+            | set { adjust }
     }
 
     // Combine
-    raw
+    signal
         | concat(adjust)
-        | concat(merge)
         | set { signal }
 
     emit:
@@ -66,7 +56,7 @@ workflow prepare_signal {
 workflow {
     gtc_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort, row.key, file(row.file) ] }
+        | map { row -> [ row.cohort, row.key, row.level, file(row.file) ] }
     pfb    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm    = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
