@@ -11,12 +11,13 @@ workflow annotate_vcf {
     annotations
 
     main:
-    annotations
-        | combine(cohort_info)
+    cohort_info
+        | combine(annotations)
         | ANNOTATE
+        | view
 
-    emit:
-    ANNOTATE.out
+    // emit:
+    // ANNOTATE.out
 }
 
 // Workflow
