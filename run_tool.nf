@@ -37,8 +37,8 @@ workflow run_tool {
     // Concatenate all annotations
     DEEPMVP.out
         | concat(ALPHAGENOME.out)
-        | FORMAT
         | concat(ATSNP.out)
+        | FORMAT
         | RESHAPE
         // | concat(PANGOLIN.out)
         | concat(SPLICEAI.out)
