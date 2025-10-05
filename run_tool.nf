@@ -26,9 +26,13 @@ workflow run_tool {
     variants | combine( tools ) | filter { it.last() == 'spliceai' }    | SPLICEAI
     variants | combine( tools ) | filter { it.last() == 'pangolin' }    | PANGOLIN
     variants | combine( tools ) | filter { it.last() == 'atsnp' }       | ATSNP
-    variants | CSQ | filter { it.last().toInteger() > 1 }
-             | combine( tools ) | filter { it.last() == 'deepmvp' }     | DEEPMVP
     variants | combine( tools ) | filter { it.last() == 'alphagenome' } | ALPHAGENOME
+
+    variants | combine(Channel.of("csq")) | CSQ
+             | filter { it.last().toInteger() > 1 }
+             | map { [it[3], it[4], it[5], it[6]] }
+             | combine( tools ) | filter { it.last() == 'deepmvp' }     | DEEPMVP
+
 
     // Concatenate all annotations
     DEEPMVP.out
