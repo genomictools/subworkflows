@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { CCTEST }      from '../modules/cctest.nf'
-include { FAMILY }      from '../modules/family.nf'
-include { VALIDATE }    from '../modules/validate.nf'
+include { CCTEST }      from '../modules/penncnv/cctest.nf'
+include { FAMILY }      from '../modules/penncnv/family.nf'
+include { VALIDATE }    from '../modules/penncnv/validate.nf'
 
 workflow test_calls {
     take:

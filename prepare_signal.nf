@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { EXTRACT }   from '../modules/extract.nf'
-include { ADJUST }    from '../modules/adjust.nf'
+include { EXTRACT }   from '../modules/penncnv/extract.nf'
+include { ADJUST }    from '../modules/penncnv/adjust.nf'
 
 workflow prepare_signal {
     take: 

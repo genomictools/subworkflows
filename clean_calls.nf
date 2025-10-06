@@ -2,10 +2,10 @@
 
 nextflow.enable.dsl=2
 
-include { FILTER }    from '../modules/filter.nf'
-include { EXCLUDE }   from '../modules/exclude.nf'
-include { CLEAN }     from '../modules/clean.nf'
-include { CNVR }      from '../modules/cnvr.nf'
+include { FILTER }    from '../modules/penncnv/filter.nf'
+include { EXCLUDE }   from '../modules/penncnv/exclude.nf'
+include { CLEAN }     from '../modules/penncnv/clean.nf'
+include { CNVR }      from '../modules/cnvr/cnvr.nf'
 
 workflow clean_calls {
     take: 

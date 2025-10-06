@@ -2,12 +2,12 @@
 
 nextflow.enable.dsl=2
 
-include { PENNCNV }   from '../modules/penncnv.nf'
-include { QUANTISNP } from '../modules/quantisnp.nf'
-include { RGADA }     from '../modules/rgada.nf'
-include { CONVERT }   from '../modules/convert.nf'
-include { COMBINE }   from '../modules/combine.nf'
-include { PLINK }     from '../modules/plink.nf'
+include { PENNCNV }   from '../modules/penncnv/penncnv.nf'
+include { QUANTISNP } from '../modules/quantisnp/quantisnp.nf'
+include { RGADA }     from '../modules/rgada/rgada.nf'
+include { CONVERT }   from '../modules/plink/convert.nf'
+include { COMBINE }   from '../modules/rocker/combine.nf'
+include { PLINK }     from '../modules/plink/plink.nf'
 
 workflow call_alternates {
     take: 

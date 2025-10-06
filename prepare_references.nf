@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { PFB } from '../modules/pfb.nf'
-include { GCM } from '../modules/gcm.nf'
-include { LEVELS } from '../modules/levels.nf'
+include { PFB }     from '../modules/bcftools/pfb.nf'
+include { GCM }     from '../modules/penncnv/gcm.nf'
+include { LEVELS }  from '../modules/quantisnp/levels.nf'
 
 workflow prepare_references {
     take:

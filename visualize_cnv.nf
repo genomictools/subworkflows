@@ -2,10 +2,10 @@
 
 nextflow.enable.dsl=2
 
-include { ANNOTATE }  from '../modules/annotate.nf'
-include { EXPORT }    from '../modules/export.nf'
-include { HEATMAP }   from '../modules/heatmap.nf'
-include { SCATTER }   from '../modules/scatter.nf'
+include { ANNOTATE }  from '../modules/penncnv/annotate.nf'
+include { EXPORT }    from '../modules/penncnv/export.nf'
+include { HEATMAP }   from '../modules/cnvr/heatmap.nf'
+include { SCATTER }   from '../modules/cnvr/scatter.nf'
 
 format_ch   = Channel.of(params.format.split(','))
 features_ch = Channel.of(params.features.split(','))
