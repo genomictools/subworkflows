@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { MATRIXEQTL }     from '../modules/matrixeqtl.nf'
+include { MATRIXEQTL }     from '../modules/matrixeqtl/matrixeqtl.nf'
 
 tools_ch = Channel.of(params.tools.split(','))
 
