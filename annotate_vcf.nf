@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { ANNOTATE }    from '../modules/bcftools/annotate.nf'
+include { ANNOTATE }    from '../modules/gatk/annotate.nf'
 
 workflow annotate_vcf {
     take:
