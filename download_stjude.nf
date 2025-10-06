@@ -3,9 +3,9 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { DOWNLOAD }    from '../modules/download.nf'
-include { MERGE }       from '../modules/merge.nf'
-include { CONVERT }     from '../modules/convert.nf'
+include { DOWNLOAD }    from '../modules/gdc/download.nf'
+include { MERGE }       from '../modules/bcftools/merge.nf'
+include { CONVERT }     from '../modules/pysam/convert.nf'
 
 workflow download_stjude {
     take:
