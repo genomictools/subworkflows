@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { RECODE }    from '../modules/recode.nf'
-include { STATS }     from '../modules/stats.nf'
-include { LINKAGE }   from '../modules/linkage.nf'
+include { RECODE }    from '../modules/plink/recode.nf'
+include { STATS }     from '../modules/merlin/stats.nf'
+include { LINKAGE }   from '../modules/merlin/linkage.nf'
 
 workflow calculate_linkage {
     take:
