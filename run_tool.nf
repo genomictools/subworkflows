@@ -3,18 +3,18 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { DEEPMVP }     from '../modules/deepmvp.nf'
-include { ATSNP }       from '../modules/atsnp.nf'
-include { ALPHAGENOME } from '../modules/alphagenome.nf'
-include { SPLICEAI }    from '../modules/spliceai.nf'
-include { PANGOLIN }    from '../modules/pangolin.nf'
-include { VEP }         from '../modules/vep.nf'
+include { DEEPMVP }     from '../modules/deepmvp/deepmvp.nf'
+include { ATSNP }       from '../modules/atsnp/atsnp.nf'
+include { ALPHAGENOME } from '../modules/alphagenome/alphagenome.nf'
+include { SPLICEAI }    from '../modules/spliceai/spliceai.nf'
+include { PANGOLIN }    from '../modules/pangolin/pangolin.nf'
+include { VEP }         from '../modules/vep/vep.nf'
 
-include { CSQ }         from '../modules/csq.nf'
+include { CSQ }         from '../modules/bcftools/csq.nf'
 
-include { FORMAT }      from '../modules/format.nf'
-include { RESHAPE }     from '../modules/reshape.nf'
-include { CONCATINATE } from '../modules/concatinate.nf'
+include { FORMAT }      from '../modules/bcftools/format.nf'
+include { RESHAPE }     from '../modules/bcftools/reshape.nf'
+include { CONCATINATE } from '../modules/bcftools/concatinate.nf'
 
 workflow run_tool {
     take:

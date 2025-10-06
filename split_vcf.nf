@@ -3,9 +3,9 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { EXTRACT }     from '../modules/extract.nf'
-include { CONVERT }     from '../modules/convert.nf'
-include { SORT_UNIQ }   from '../modules/sort_uniq.nf'
+include { EXTRACT }     from '../modules/bcftools/extract.nf'
+include { CONVERT }     from '../modules/bcftools/convert.nf'
+include { SORT_UNIQ }   from '../modules/utils/sort_uniq.nf'
 
 workflow split_vcf {
     take:
