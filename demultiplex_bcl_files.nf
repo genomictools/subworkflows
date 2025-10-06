@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { BCLCONVERT }  from '../modules/bclconvert.nf'
+include { BCLCONVERT }  from '../modules/bclconvert/bclconvert.nf'
 
 // Demultiplexing bcl files
 workflow demultiplex_bcl_files {
