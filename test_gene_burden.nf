@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { READREQUENCY }    from '../modules/rocker/readfrequency.nf'
+include { READFREQUENCY }   from '../modules/rocker/readfrequency.nf'
 include { BURDENTEST }      from '../modules/rocker/burdentest.nf'
 
 model_ch = Channel.of('DOM', 'REC')
@@ -35,7 +35,7 @@ workflow test_gene_burden {
         { it -> [ "${it[1]}.${it[2]}.test.tsv", it.last() ] }
 
     emit:
-    TEST.out
+    BURDENTEST.out
 }
 
 workflow {
