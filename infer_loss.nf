@@ -2,12 +2,13 @@
 
 nextflow.enable.dsl=2
 
-include { BCFTOOLS_SUBSET } from '../modules/subset.nf'
-include { SAMTOOLS_SUBSET } from '../modules/subset.nf'
-include { EXTRACT }       from '../modules/extract.nf'
-include { ONCOEXTRACT }   from '../modules/oncoextract.nf'
-include { STATS }         from '../modules/stats.nf'
-include { PLOT }          from '../modules/plot.nf'
+include { SUBSET as BCFTOOLS_SUBSET } from '../modules/bcftools/subset.nf'
+include { SUBSET as SAMTOOLS_SUBSET } from '../modules/samtools/subset.nf'
+
+include { EXTRACT }         from '../modules/jloh/extract.nf'
+include { ONCOEXTRACT }     from '../modules/jloh/oncoextract.nf'
+include { STATS }           from '../modules/jloh/stats.nf'
+include { PLOT }            from '../modules/jloh/plot.nf'
 
 workflow infer_loss {
     take:
