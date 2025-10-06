@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 // Include modules
 include { DOWNLOAD }    from '../modules/download.nf'
-include { COMBINE }     from '../modules/combine.nf'
+include { MERGE }       from '../modules/merge.nf'
 include { CONVERT }     from '../modules/convert.nf'
 
 workflow download_stjude {
@@ -34,11 +34,10 @@ workflow download_stjude {
         | CONVERT
         | combine(samplesheet_ch, by: 0)
         | groupTuple(by: 2)
-        | COMBINE
-        | view
+        | MERGE
 
-    // emit:
-    // COMBINE.out
+    emit:
+    MERGE.out
 }
 
 workflow {
