@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { READ }      from '../modules/read.nf'
-include { TEST }      from '../modules/test.nf'
+include { READREQUENCY }    from '../modules/rocker/readfrequency.nf'
+include { BURDENTEST }      from '../modules/rocker/burdentest.nf'
 
 model_ch = Channel.of('DOM', 'REC')
 
@@ -15,7 +15,7 @@ workflow test_gene_burden {
     main:
     // Load cohorts
     cohorts
-        | READ
+        | READFREQUENCY
         | branch {
             cases: it[1] == 'cases'
             controls: it[1] == 'controls'
@@ -27,7 +27,7 @@ workflow test_gene_burden {
         | combine(counts.controls, by: 2)
         | combine(model)
         | filter { it[0] != 'ALL' }
-        | TEST
+        | BURDENTEST
         | collectFile (
             keepHeader: true,
             storeDir: "${params.output_dir}/summary",
