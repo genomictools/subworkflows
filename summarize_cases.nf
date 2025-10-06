@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { CONVERT }     from '../modules/convert.nf'
-include { EXTRACT }     from '../modules/extract.nf'
-include { AGGREGATE }   from '../modules/aggregate.nf'
+include { CONVERT }     from '../modules/plink/convert.nf'
+include { EXTRACT }     from '../modules/plink/extract.nf'
+include { AGGREGATE }   from '../modules/rocker/aggregate.nf'
 
 category_ch = Channel.of(params.categories.split(','))
 variable_ch = Channel.of(params.variables.split(','))

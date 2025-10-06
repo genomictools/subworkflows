@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { SPLIT }       from '../modules/split.nf'
-include { FILL }        from '../modules/fill.nf'
-include { FILTER }      from '../modules/filter.nf'
+include { SPLIT }       from '../modules/bcftools/split.nf'
+include { FILL }        from '../modules/bcftools/fill.nf'
+include { FILTER }      from '../modules/bcftools/filter.nf'
 
 category_ch = Channel.of(params.categories.split(','))
 
