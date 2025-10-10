@@ -42,6 +42,7 @@ workflow prepare_variants {
         | ( params.fill ? FILL : map {it} )
         | filter { it.last().toInteger() > 0 }
         | concat(snps.references)
+        | combine(Channel.fromPath(params.genelist)) // Dummy file
         | CONVERT
         | branch {
             references : it[1] == 'references'
