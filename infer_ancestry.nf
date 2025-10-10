@@ -2,11 +2,11 @@
 
 nextflow.enable.dsl=2
 
-include { MERGE }       from '../modules/merge.nf'
-include { FILTER }      from '../modules/filter.nf'
-include { SCALE }       from '../modules/scale.nf'
-include { ASSIGN }      from '../modules/assign.nf'
-include { PLOT }        from '../modules/plot.nf'
+include { MERGE }       from '../modules/plink/merge.nf'
+include { FILTER }      from '../modules/plink/filter.nf'
+include { SCALE }       from '../modules/plink/scale.nf'
+include { ASSIGN }      from '../modules/rocker/assign.nf'
+include { PLOTPCA }     from '../modules/rocker/plotpca.nf'
 
 modes_ch    = Channel.of(params.modes.split(','))
 
@@ -14,27 +14,26 @@ workflow infer_ancestry {
     take:
     cases
     references
+    population
 
     main:
-    cases
-        | combine(references)
-        | MERGE
+
+    cases = cases | combine(population, by: 0)
+    references = references | combine(population, by: 0)
+    marged = MERGE(cases, references)
+    marged
         | FILTER
         | combine(modes_ch)
         | SCALE
         | ASSIGN
-        | PLOT
-    
+        | PLOTPCA
+
     emit:
-    plots = PLOT.out
+    plots = PLOTPCA.out
 }
 
 // worflow
 workflow {
-    population_ch = Channel.fromPath(params.cohorts)
-        | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort, file(row.population) ] }
-
     cases_ch = Channel.fromPath(params.cases)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.type, file(row.bim), file(row.bed), file(row.fam), file(row.nosex), file(row.log)] }
@@ -43,5 +42,9 @@ workflow {
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.type, file(row.bim), file(row.bed), file(row.fam), file(row.nosex), file(row.log)] }
 
-    infer_ancestry(cases_ch, reference_ch)
+    population_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, file(row.population) ] }
+
+    infer_ancestry(cases_ch, reference_ch, population_ch)
 }

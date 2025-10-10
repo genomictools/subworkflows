@@ -2,24 +2,30 @@
 
 nextflow.enable.dsl=2
 
-include { REMOVE }      from '../modules/remove.nf'
-include { FIX }         from '../modules/fix.nf'
-include { FILL }        from '../modules/fill.nf'
-include { CONVERT }     from '../modules/convert.nf'
-include { PRUNE }       from '../modules/prune.nf'
-include { COMBINE }     from '../modules/combine.nf'
+include { PICK }        from '../modules/bcftools/pick.nf'
+include { REMOVE }      from '../modules/bcftools/remove.nf'
+include { FIX }         from '../modules/bcftools/fix.nf'
+include { FILL }        from '../modules/bcftools/fill.nf'
+include { CONVERT }     from '../modules/plink/convert.nf'
+include { PRUNE }       from '../modules/plink/prune.nf'
+include { COMBINE }     from '../modules/plink/combine.nf'
 
 fasta       = Channel.fromFilePairs(params.fasta, flat: true)
 ld_regions  = Channel.fromPath(params.ld_regions)
 
 workflow prepare_variants {
     take:
+    cohorts
     variants
     population
     
     main:
     // Remove and fix
-    variants
+    cohorts
+        | combine(variants)
+        | combine(population, by: 0)
+        | PICK
+        | filter { it.last().toInteger() > 0 }
         | ( params.remove ? REMOVE : map {it} )
         | filter { it.last().toInteger() > 0 }
         | ( params.fix    ? combine(fasta) : map {it} )
@@ -50,7 +56,6 @@ workflow prepare_variants {
         | concat(snps.references)
         | groupTuple(by: [0,1])
         | COMBINE
-        | combine(population, by: 0)
         | branch {
             references : it[1] == 'references'
             cases      : it[1] == 'cases'
@@ -64,16 +69,18 @@ workflow prepare_variants {
 
 // worflow
 workflow {
-    variants_ch = Channel.fromPath(params.variants)
+    cohorts_ch = Channel.fromPath(params.variants)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ 
             row.cohort, row.type, row.chrom, row.chunk,
-            file(row.vcf), filw(row.index), row.n_vars
+            file(row.vcf), file(row.index), row.n_vars
          ] }
+
+    variants_ch   = Channel.fromPath(params.snplist)
 
     population_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, file(row.population) ] }
 
-    prepare_variants(variants_ch)
+    prepare_variants( cohorts_ch, variants_ch, population_ch)
 }
