@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 include { TEST }        from '../modules/test.nf'
 include { PLOT }        from '../modules/plot.nf'
 
-workflow test_variants {
+workflow test_association {
     take:
     genotypes
     phenotypes
@@ -50,5 +50,5 @@ workflow  {
 
     test_ch = Channel.of(params.tests.split(','))
 
-    test_variants( genotypes_ch, phenotypes_ch, covariates_ch, test_ch )
+    test_association( genotypes_ch, phenotypes_ch, covariates_ch, test_ch )
 }

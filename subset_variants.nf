@@ -10,7 +10,7 @@ include { COMBINE }     from '../modules/combine.nf'
 
 test_ch = Channel.of(params.tests.split(','))
 
-workflow prepare_variants {
+workflow subset_variants {
     take:
     genotypes
     pedigree
@@ -47,5 +47,5 @@ workflow  {
         | map { row -> [ row.cohort,file(row.pedigree) ] }
         | unique
 
-    prepare_variants( genotypes_ch, pedigree_ch )
+    subset_variants( genotypes_ch, pedigree_ch )
 }
