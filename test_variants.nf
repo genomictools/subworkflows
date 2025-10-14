@@ -2,36 +2,26 @@
 
 nextflow.enable.dsl=2
 
-include { CONVERT }     from '../modules/convert.nf'
-include { PRUNE }       from '../modules/prune.nf'
-include { COMBINE }     from '../modules/combine.nf'
-include { FILTER }      from '../modules/filter.nf'
 include { TEST }        from '../modules/test.nf'
 include { PLOT }        from '../modules/plot.nf'
-
-test_ch = Channel.of(params.tests.split(','))
 
 workflow test_variants {
     take:
     genotypes
-    pedigree
     phenotypes
+    covariates
+    tests
 
     main:
     genotypes
-        | combine(pedigree, by: 0)
-        | CONVERT
-        | groupTuple(by: [0, 2])
-        | COMBINE
-        | ( params.filter ? FILTER : map { it } )
-        | ( params.prune  ? PRUNE  : map { it } )
-        | combine(test_ch)
+        | combine(tests)
         | combine(phenotypes, by: 0)
+        | combine(covariates, by: [0,1])
         | TEST
         | transpose
         | map { it -> 
             def phenotype = it[3].name.split('\\.')[2]
-            [ it[0], it[1], it[2], phenotype, it[3], it[4], it[5] ]
+            [ it[0], it[1], it[2], phenotype, it[3], it[4] ]
         }
         | ( params.plot ? PLOT : map { it })
 
@@ -43,19 +33,22 @@ workflow  {
     genotypes_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [
-            row.cohort,row.key,row.category,file(row.file),file(row.index),
-            row.n_samples,row.n_variants
+            row.cohort, row.category,
+            file(row.bim),file(row.bed), file(row.fam),file(row.log),
+            row.n_samples, row.n_variants
         ] }
-
-    pedigree_ch = Channel.fromPath(params.cohorts)
-        | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort,file(row.pedigree) ] }
-        | unique
 
     phenotypes_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort,file(row.phenotypes) ] }
         | unique
 
-    test_variants( genotypes_ch, pedigree_ch, phenotypes_ch )
+    covariates_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, row.category, file(row.covariates) ] }
+        | unique
+
+    test_ch = Channel.of(params.tests.split(','))
+
+    test_variants( genotypes_ch, phenotypes_ch, covariates_ch, test_ch )
 }
