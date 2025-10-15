@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 include { MERGE }       from '../modules/plink/merge.nf'
 include { FILTER }      from '../modules/plink/filter.nf'
+include { SAMPLE }      from '../modules/plink/sample.nf'
 include { SCALE }       from '../modules/plink/scale.nf'
 include { ASSIGN }      from '../modules/rocker/assign.nf'
 include { PLOTPCA }     from '../modules/rocker/plotpca.nf'
@@ -17,12 +18,11 @@ workflow infer_ancestry {
     population
 
     main:
-
-    cases = cases | combine(population, by: 0)
-    references = references | combine(population, by: 0)
     marged = MERGE(cases, references)
     marged
         | FILTER
+        | SAMPLE
+        | combine(population)
         | combine(modes_ch)
         | SCALE
         | ASSIGN
