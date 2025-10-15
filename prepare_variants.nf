@@ -7,11 +7,11 @@ include { REMOVE }      from '../modules/bcftools/remove.nf'
 include { FIX }         from '../modules/bcftools/fix.nf'
 include { FILL }        from '../modules/bcftools/fill.nf'
 include { CONVERT }     from '../modules/plink/convert.nf'
+include { EXCLUDE }     from '../modules/plink/exclude.nf'
 include { PRUNE }       from '../modules/plink/prune.nf'
 include { COMBINE }     from '../modules/plink/combine.nf'
 
 fasta       = Channel.fromFilePairs(params.fasta, flat: true)
-ld_regions  = Channel.fromPath(params.ld_regions)
 
 workflow prepare_variants {
     take:
@@ -52,7 +52,7 @@ workflow prepare_variants {
 
     // Prune and combine
     snps.cases
-        | ( params.prune ? combine(ld_regions) : map {it} )
+        | ( params.exclude ? EXCLUDE : map {it} )
         | ( params.prune ? PRUNE : map {it} )
         | concat(snps.references)
         | groupTuple(by: [0,1])
