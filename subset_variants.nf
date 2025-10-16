@@ -25,6 +25,10 @@ workflow subset_variants {
         | ( params.filter ? FILTER : map { it } )
         | filter { it.last().toInteger() > 0 }
         | groupTuple(by: [0, 2])
+        | map {
+            cohort, category, key, bim, bed, fam, log, n_samples, n_variants ->
+            tuple(cohort, key, category, bim, bed, fam, log, n_samples, n_variants)
+        }
         | COMBINE
         | ( params.remove  ? REMOVE  : map { it } )
         | filter { it.last().toInteger() > 0 }
