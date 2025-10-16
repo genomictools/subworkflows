@@ -20,7 +20,13 @@ workflow infer_ancestry {
     main:
     marged = MERGE(cases, references)
     marged
+        | map { ref, cohort, bim, bed, fam, log, n_samples, n_variants ->
+            [ ref, 'with', cohort, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | FILTER
+        | map { ref, with, cohort, bim, bed, fam, log, n_samples, n_variants ->
+            [ ref, cohort, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | SAMPLE
         | combine(population)
         | combine(modes_ch)

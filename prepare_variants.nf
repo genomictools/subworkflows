@@ -44,6 +44,9 @@ workflow prepare_variants {
         | concat(snps.references)
         | combine(Channel.fromPath(params.genelist)) // Dummy file
         | CONVERT
+        | map { cohort, type, chunk, bim, bed, fam, log, n_samples, n_variants ->
+            [ "${cohort}.${chunk}", type, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | branch {
             references : it[1] == 'references'
             cases      : it[1] == 'cases'
@@ -55,6 +58,11 @@ workflow prepare_variants {
         | ( params.exclude ? EXCLUDE : map {it} )
         | ( params.prune ? PRUNE : map {it} )
         | concat(snps.references)
+        | map { cohort, type, bim, bed, fam, log, n_samples, n_variants ->
+            chunk = cohort.split('\\.').last()
+            cohort = cohort.split('\\.').first()
+            [ cohort, type, chunk, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | groupTuple(by: [0,1])
         | COMBINE
         | branch {
