@@ -20,18 +20,10 @@ workflow subset_variants {
         | ( params.trim ? TRIM : map { it } )
         | filter { it.last().toInteger() > 0 }
         | combine(pedigree, by: 0)
-        | map { cohort, key, category, file, index, n_samples, n_variants, pedigree ->
-            tuple("${cohort}.${key}", category, file, index, n_samples, n_variants, pedigree)
-        }
         | CONVERT
         | filter { it.last().toInteger() > 0 }
         | ( params.filter ? FILTER : map { it } )
         | filter { it.last().toInteger() > 0 }
-        | map { cohort, category, bim, bed, fam, log, n_samples, n_variants ->
-            key = cohort.tokenize('.').last()
-            cohort = cohort.tokenize('.').first()
-            tuple(cohort, key, category, bim, bed, fam, log, n_samples, n_variants) 
-        }
         | groupTuple(by: [0, 2])
         | COMBINE
         | ( params.remove  ? REMOVE  : map { it } )
