@@ -16,10 +16,10 @@ workflow scale_variants {
         | filter { it.last().toInteger() > 0 }
         | ( params.exclude ? EXCLUDE : map { it } )
         | filter { it.last().toInteger() > 0 }
-        | combine(Channel.fromPath(params.exlude_regions))
         | combine(Channel.of("noclusters"))
+        | combine(Channel.fromPath(params.exlude_regions))
         | SCALE
-        | map { [it[0], it[1], it[3]]}
+        | map { [it[0], it[1], it[4]]}
         | set { scaled }
 
     emit:
