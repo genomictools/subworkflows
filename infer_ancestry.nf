@@ -28,8 +28,8 @@ workflow infer_ancestry {
             [ ref, cohort, bim, bed, fam, log, n_samples, n_variants ]
         }
         | SAMPLE
-        | combine(population)
         | combine(modes_ch)
+        | combine(population)
         | SCALE
         | ASSIGN
         | PLOTPCA
