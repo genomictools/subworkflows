@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 include { PENNCNV }   from '../modules/penncnv/penncnv.nf'
 include { QUANTISNP } from '../modules/quantisnp/quantisnp.nf'
 include { RGADA }     from '../modules/rgada/rgada.nf'
-include { CONVERT }   from '../modules/plink/convert.nf'
+include { CONVERT }   from '../modules/penncnv/convert.nf'
 include { COMBINE }   from '../modules/rocker/combine.nf'
 include { PLINK }     from '../modules/plink/plink.nf'
 
@@ -30,7 +30,7 @@ workflow call_alternates {
     genotype
         | combine(req)
         | PLINK
-        | filter { it.last().toInteger() > 1 }
+        // | filter { it.last().toInteger() > 1 }
         | set { plink }
 
     // PENNCNV
