@@ -33,7 +33,7 @@ workflow download_stjude {
         | groupTuple(by: 0, sort: 'hash')
         | CONVERT
         | combine(samplesheet_ch, by: 0)
-        | groupTuple(by: 2)
+        | groupTuple(by: 3)
         | MERGE
 
     emit:
