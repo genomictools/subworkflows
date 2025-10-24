@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { EXCLUDE }     from '../modules/exclude.nf'
-include { PRUNE }       from '../modules/prune.nf'
-include { SCALE }       from '../modules/scale.nf'
+include { EXCLUDE }     from '../modules/plink/exclude.nf'
+include { PRUNE }       from '../modules/plink/prune.nf'
+include { SCALE }       from '../modules/plink/scale.nf'
 
 workflow scale_variants {
     take:
@@ -16,8 +16,10 @@ workflow scale_variants {
         | filter { it.last().toInteger() > 0 }
         | ( params.exclude ? EXCLUDE : map { it } )
         | filter { it.last().toInteger() > 0 }
+        | combine(Channel.of("noclusters"))
+        | combine(Channel.fromPath(params.exlude_regions))
         | SCALE
-        | map { [it[0], it[1], it[2]]}
+        | map { [it[0], it[1], it[4]]}
         | set { scaled }
 
     emit:

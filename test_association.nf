@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { TEST }        from '../modules/test.nf'
-include { PLOT }        from '../modules/plot.nf'
+include { ASSOCTEST }       from '../modules/plink/assoctest.nf'
+include { PLOTMANHATTAN }   from '../modules/rocker/plotmanhattan.nf'
 
 workflow test_association {
     take:
@@ -17,16 +17,16 @@ workflow test_association {
         | combine(tests)
         | combine(phenotypes, by: 0)
         | combine(covariates, by: [0,1])
-        | TEST
+        | ASSOCTEST
         | transpose
         | map { it -> 
             def phenotype = it[3].name.split('\\.')[2]
             [ it[0], it[1], it[2], phenotype, it[3], it[4] ]
         }
-        | ( params.plot ? PLOT : map { it })
+        | ( params.plot ? PLOTMANHATTAN : map { it })
 
     emit:
-    tests = TEST.out
+    tests = ASSOCTEST.out
 }
 
 workflow  {

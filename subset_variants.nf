@@ -2,11 +2,11 @@
 
 nextflow.enable.dsl=2
 
-include { TRIM }        from '../modules/trim.nf'
-include { CONVERT }     from '../modules/convert.nf'
-include { FILTER }      from '../modules/filter.nf'
-include { REMOVE }      from '../modules/remove.nf'
-include { COMBINE }     from '../modules/combine.nf'
+include { TRIM }        from '../modules/bcftools/trim.nf'
+include { CONVERT }     from '../modules/plink/convert.nf'
+include { FILTER }      from '../modules/plink/filter.nf'
+include { REMOVE }      from '../modules/plink/remove.nf'
+include { COMBINE }     from '../modules/plink/combine.nf'
 
 test_ch = Channel.of(params.tests.split(','))
 
@@ -25,6 +25,10 @@ workflow subset_variants {
         | ( params.filter ? FILTER : map { it } )
         | filter { it.last().toInteger() > 0 }
         | groupTuple(by: [0, 2])
+        | map {
+            cohort, category, key, bim, bed, fam, log, n_samples, n_variants ->
+            tuple(cohort, key, category, bim, bed, fam, log, n_samples, n_variants)
+        }
         | COMBINE
         | ( params.remove  ? REMOVE  : map { it } )
         | filter { it.last().toInteger() > 0 }
