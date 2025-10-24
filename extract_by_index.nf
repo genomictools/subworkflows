@@ -3,11 +3,11 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { EXTRACT }     from '../modules/extract.nf'
-include { RETRIEVE }    from '../modules/retrieve.nf'
-include { SPLIT }       from '../modules/split.nf'
-include { COMBINE }     from '../modules/combine.nf'
-include { PAIR }        from '../modules/pair.nf'
+include { EXTRACT }     from '../modules/seqkit/extract.nf'
+include { RETRIEVE }    from '../modules/seqkit/retrieve.nf'
+include { SPLIT }       from '../modules/seqkit/split.nf'
+include { COMBINE }     from '../modules/seqkit/combine.nf'
+include { PAIR }        from '../modules/seqkit/pair.nf'
 
 // Extract reads from fastq files based on index sequences
 workflow extract_by_index {

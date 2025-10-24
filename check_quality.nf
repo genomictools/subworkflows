@@ -3,9 +3,9 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { FASTQC }      from '../modules/fastqc.nf'
-include { SEQSTATS }    from '../modules/seqstats.nf'
-include { MULTIQC }     from '../modules/multiqc.nf'
+include { FASTQC }      from '../modules/fastqc/fastqc.nf'
+include { SEQSTATS }    from '../modules/seqkit/seqstats.nf'
+include { MULTIQC }     from '../modules/multiqc/multiqc.nf'
 
 // Check quality of fastq files
 workflow check_quality {
