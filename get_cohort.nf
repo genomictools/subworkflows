@@ -2,9 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { SUBSET }      from '../modules/subset.nf'
-include { ANNOTATE }    from '../modules/annotate.nf'
-include { COMBINE }     from '../modules/combine.nf'
+include { SUBSETMULTIVCF as SUBSET }  from '../modules/bcftools/subset.nf'
+include { ANNOTATE }    from '../modules/bcftools/annotate.nf'
+include { COMBINE }     from '../modules/bcftools/combine.nf'
 
 workflow get_cohort {
     take:

@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { TABULATE }     from '../modules/tabulate.nf'
-include { SUMMARIZE }    from '../modules/summarize.nf'
+include { TABULATE }     from '../modules/bcftools/tabulate.nf'
+include { SUMMARIZE }    from '../modules/rocker/summarize.nf'
 
 workflow summarize_controls {
     take:

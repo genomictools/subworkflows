@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { COORDINATES } from '../modules/coordinates.nf'
+include { COORDINATES } from '../modules/bioconductor/coordinates.nf'
 
 workflow get_coordinates {
     take:
