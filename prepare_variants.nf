@@ -7,11 +7,11 @@ include { REMOVE }      from '../modules/bcftools/remove.nf'
 include { FIX }         from '../modules/bcftools/fix.nf'
 include { FILL }        from '../modules/bcftools/fill.nf'
 include { CONVERT }     from '../modules/plink/convert.nf'
+include { EXCLUDE }     from '../modules/plink/exclude.nf'
 include { PRUNE }       from '../modules/plink/prune.nf'
 include { COMBINE }     from '../modules/plink/combine.nf'
 
 fasta       = Channel.fromFilePairs(params.fasta, flat: true)
-ld_regions  = Channel.fromPath(params.ld_regions)
 
 workflow prepare_variants {
     take:
@@ -42,7 +42,11 @@ workflow prepare_variants {
         | ( params.fill ? FILL : map {it} )
         | filter { it.last().toInteger() > 0 }
         | concat(snps.references)
+        | combine(Channel.fromPath(params.genelist)) // Dummy file
         | CONVERT
+        | map { cohort, type, chunk, bim, bed, fam, log, n_samples, n_variants ->
+            [ "${cohort}.${chunk}", type, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | branch {
             references : it[1] == 'references'
             cases      : it[1] == 'cases'
@@ -51,9 +55,14 @@ workflow prepare_variants {
 
     // Prune and combine
     snps.cases
-        | ( params.prune ? combine(ld_regions) : map {it} )
+        | ( params.exclude ? EXCLUDE : map {it} )
         | ( params.prune ? PRUNE : map {it} )
         | concat(snps.references)
+        | map { cohort, type, bim, bed, fam, log, n_samples, n_variants ->
+            chunk = cohort.split('\\.').last()
+            cohort = cohort.split('\\.').first()
+            [ cohort, type, chunk, bim, bed, fam, log, n_samples, n_variants ]
+        }
         | groupTuple(by: [0,1])
         | COMBINE
         | branch {
