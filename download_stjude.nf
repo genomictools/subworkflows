@@ -3,9 +3,9 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { DOWNLOAD }    from '../modules/download.nf'
-include { COMBINE }     from '../modules/combine.nf'
-include { CONVERT }     from '../modules/convert.nf'
+include { DOWNLOAD }    from '../modules/gdc/download.nf'
+include { MERGE }       from '../modules/bcftools/merge.nf'
+include { CONVERT }     from '../modules/pysam/convert.nf'
 
 workflow download_stjude {
     take:
@@ -33,12 +33,11 @@ workflow download_stjude {
         | groupTuple(by: 0, sort: 'hash')
         | CONVERT
         | combine(samplesheet_ch, by: 0)
-        | groupTuple(by: 2)
-        | COMBINE
-        | view
+        | groupTuple(by: 3)
+        | MERGE
 
-    // emit:
-    // COMBINE.out
+    emit:
+    MERGE.out
 }
 
 workflow {
