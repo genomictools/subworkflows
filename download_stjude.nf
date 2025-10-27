@@ -28,16 +28,19 @@ workflow download_stjude {
         ]}
         | unique()
 
-    manifest_ch
-        | DOWNLOAD
+    manifest_ch | DOWNLOAD | set { download_ch }
+
+    if ( params.type == 'gvcf') {
+    download_ch
         | groupTuple(by: 0, sort: true)
         | CONVERT
         | combine(samplesheet_ch, by: 0)
         | groupTuple(by: 3)
         | MERGE
+    }
 
     emit:
-    MERGE.out
+    download_ch
 }
 
 workflow {
