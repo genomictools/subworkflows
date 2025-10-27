@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { SCORE }   from '../modules/score.nf'
+include { SCORE }   from '../modules/alphagenome/score.nf'
 
 workflow score_variant {
     take:
