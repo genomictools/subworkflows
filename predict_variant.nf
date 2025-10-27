@@ -3,8 +3,8 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { PREDICT } from '../modules/predict.nf'
-include { PLOT }    from '../modules/plot.nf'
+include { PREDICT } from '../modules/alphagenome/predict.nf'
+include { PLOT }    from '../modules/alphagenome/plot.nf'
 
 workflow predict_variant {
     take:
@@ -33,7 +33,7 @@ workflow {
     // Define input from file
     variants_ch = Channel.fromPath(params.cohort_info)
         | splitCsv(header: true, sep: ',')
-        | map { row -> [ row.cohort, row.variant, row.organism, row.ontology, row.assay, row.sequence_length ]}
+        | map { row -> [ row.cohort, row.variant, row.ontology, row.assay, row.sequence_length ]}
 
     predict_variant(variants_ch)
 }
