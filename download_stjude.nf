@@ -30,7 +30,7 @@ workflow download_stjude {
 
     manifest_ch
         | DOWNLOAD
-        | groupTuple(by: 0, sort: 'hash')
+        | groupTuple(by: 0, sort: true)
         | CONVERT
         | combine(samplesheet_ch, by: 0)
         | groupTuple(by: 3)
