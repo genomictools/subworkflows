@@ -3,8 +3,8 @@
 nextflow.enable.dsl=2
 
 // Include modules
-include { PREDICT } from '../modules/predict.nf'
-include { PLOT }    from '../modules/plot.nf'
+include { PREDICT } from '../modules/alphagenome/predict.nf'
+include { PLOT }    from '../modules/alphagenome/plot.nf'
 
 workflow predict_variant {
     take:
