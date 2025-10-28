@@ -4,14 +4,16 @@ nextflow.enable.dsl=2
 
 // Include modules
 include { DOWNLOAD }    from '../modules/gdc/download.nf'
-include { MERGE }       from '../modules/bcftools/merge.nf'
-include { CONVERT }     from '../modules/pysam/convert.nf'
+include { COMBINE }     from '../modules/gatk/combine.nf'
+include { GENOTYPE }    from '../modules/gatk/genotype.nf'
+include { GATHER }      from '../modules/gatk/gather.nf'
 
 workflow download_stjude {
     take:
     manifest
     samplesheet
-    
+    fasta_ch
+
     main:
     manifest_ch = Channel.fromPath(manifest)
         | splitCsv(header: false, sep: '\t', skip: 1)
@@ -33,10 +35,26 @@ workflow download_stjude {
     if ( params.type == 'gvcf') {
     download_ch
         | groupTuple(by: 0, sort: true)
-        | CONVERT
         | combine(samplesheet_ch, by: 0)
-        | groupTuple(by: 3)
-        | MERGE
+        | map { id, files, cohort -> [ cohort, id ] + files.flatten() }
+        | set { gvcf_ch }
+
+    if ( params.combine ) {
+    gvcf_ch
+        | groupTuple(by: 0, sort: true)
+        | combine(fasta_ch)
+        | COMBINE
+        | set { combined_gvcf_ch }
+    }
+
+    if ( params.joint_call ) {
+    combined_gvcf_ch
+        | combine(fasta_ch, by: [0, 1])
+        | GENOTYPE
+        | groupTuple(by: [0,2], sort: true)
+        | GATHER
+        | set { joint_vcf_ch }
+    }
     }
 
     emit:
