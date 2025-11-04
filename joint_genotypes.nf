@@ -20,7 +20,7 @@ workflow joint_genotypes {
         | groupTuple(by: 0)
 
     // Create chunks from chrom sizes
-    chunks =  createChunks(params.chrom_sizes, params.chunk) | take(3)
+    chunks =  createChunks(params.chrom_sizes, params.chunk)
 
     // Collect by cohort and sample ID
     gvcf
@@ -42,5 +42,13 @@ workflow joint_genotypes {
 }
 
 workflow {
-    joint_genotypes(samplesheet_ch, gvcf_ch, fasta_ch)
+    samplesheet_ch = Channel.fromPath(params.samplesheet)
+        | splitCsv(header: false, sep: '\t', skip: 1)
+        | map { row -> [ params.cohort, row.name] }
+
+    downloaded_files = Channel.fromPath(params.files)
+        | splitCsv(header: false, sep: '\t', skip: 1)
+        | map { row -> [ row.id, row.file] }
+
+    joint_genotypes(samplesheet_ch, downloaded_files)
 }
