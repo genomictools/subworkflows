@@ -11,7 +11,7 @@ workflow download_stjude {
 
     main:
     manifest_ch = Channel.fromPath(manifest)
-        | splitCsv(header: false, sep: '\t', skip: 1)
+        | splitCsv(header: false, sep: '\t')
         | map { row -> [
             row[params.manifest_id.toInteger()  - 1],
             row[params.manifest_url.toInteger() - 1]

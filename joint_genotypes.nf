@@ -24,9 +24,10 @@ workflow joint_genotypes {
 
     // Collect by cohort and sample ID
     gvcf
-        | groupTuple(by: 0, sort: true)
         | combine(samplesheet, by: 0)
-        | map { id, files, cohort -> [ cohort, id ] + files.flatten() }
+        | groupTuple(by: [0,2])
+        | filter { id, files, cohort -> files.flatten().size() == 2 }
+        | map { id, files, cohort -> [ cohort, id ] + files.flatten().sort { it.name } }
         | groupTuple(by: 0)
         | combine(fasta)
         | combine(chunks)
