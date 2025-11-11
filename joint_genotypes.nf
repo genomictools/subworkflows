@@ -10,8 +10,7 @@ include { SPLIT }       from '../modules/bedtools/split.nf'
 
 workflow joint_genotypes {
     take:
-    samplesheet
-    gvcf
+    cohorts
 
     main:
     // Load fasta
@@ -24,16 +23,9 @@ workflow joint_genotypes {
         | SPLIT
         | transpose
         | map { assembly, bed -> [ assembly, "chunk_" + bed.name.split('\\.')[2], bed ] }
-        | take(3)
 
     // Collect by cohort and sample ID
-    gvcf
-        | combine(samplesheet, by: 0)
-        | groupTuple(by: [0,2])
-        | filter { id, files, cohort -> files.flatten().size() == 2 }
-        | map { id, files, cohort -> [ params.assembly, cohort, id ] + files.flatten().sort { it.name } }
-        | take(3)
-        | groupTuple(by: [0, 1])
+    cohorts
         | combine(chunks, by: 0)
         | COMBINE
         | combine(fasta, by: 0)
@@ -48,13 +40,9 @@ workflow joint_genotypes {
 }
 
 workflow {
-    samplesheet_ch = Channel.fromPath(params.samplesheet)
-        | splitCsv(header: false, sep: '\t', skip: 1)
-        | map { row -> [ params.cohort, row.name] }
+    cohorts_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, row.sample, row.file, row.index ]}
 
-    downloaded_files = Channel.fromPath(params.files)
-        | splitCsv(header: false, sep: '\t', skip: 1)
-        | map { row -> [ row.id, row.file] }
-
-    joint_genotypes(samplesheet_ch, downloaded_files)
+    joint_genotypes(cohorts_ch)
 }
