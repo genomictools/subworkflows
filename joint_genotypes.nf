@@ -38,9 +38,9 @@ workflow joint_genotypes {
         | COMBINE
         | combine(fasta, by: 0)
         | GENOTYPE
-        // | groupTuple(by: [0, 1], sort: true)
-        // | combine(fasta, by: 0)
-        // | MERGE
+        | groupTuple(by: [0, 1], sort: true)
+        | combine(fasta, by: 0)
+        | MERGE
         | set { joint_vcf_ch }
 
     emit:
