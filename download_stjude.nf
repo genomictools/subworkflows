@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 // Include modules
 include { DOWNLOAD }    from '../modules/dx/download.nf'
+include { SORT }        from '../modules/samtools/sort.nf'
 
 workflow download_stjude {
     take:
@@ -12,6 +13,7 @@ workflow download_stjude {
     main:
     manifest
         | DOWNLOAD
+        | ( params.sort ? SORT : map { it } )
         | set { download_ch }
 
     emit:
