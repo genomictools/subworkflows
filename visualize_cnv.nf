@@ -24,8 +24,8 @@ workflow visualize_cnv {
         | ANNOTATE
         | filter { it.last().toInteger() > 1 }
         | branch { 
-            gene     : filter { it[2] == 'refgene' },
-            segments : filter { it[2] == 'anno' }
+            gene     : it[2] == 'refgene'
+            segments : it[2] == 'anno'
          }
         | set { annotated }
     
