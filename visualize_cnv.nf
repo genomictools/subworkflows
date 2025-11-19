@@ -23,12 +23,16 @@ workflow visualize_cnv {
         | combine(features)
         | ANNOTATE
         | filter { it.last().toInteger() > 1 }
+        | branch { 
+            gene     : filter { it[2] == 'refgene' },
+            segments : filter { it[2] == 'anno' }
+         }
         | set { annotated }
     
     // export as tables
     Channel.empty() | set { tables }
     if ( params.export ) {
-    annotated
+    annotated.gene
         | combine(format_ch)
         | EXPORT
         | set { tables }
@@ -38,7 +42,7 @@ workflow visualize_cnv {
     genelist | groupTuple(by: 0) | set { cohort_gene }
     Channel.empty() | set { heatmaps }
     if ( params.heatmap ) {
-    annotated
+    annotated.gene
         | filter { it.last().toInteger() > 10 }
         | combine(cohort_gene, by: 0)
         | HEATMAP
@@ -51,7 +55,7 @@ workflow visualize_cnv {
         | groupTuple(by: 0) 
         | set { combined_signal }
 
-    annotated
+    annotated.gene
         | splitCsv(elem: 4, header: false, strip: true, sep: "\t")
         | map {cohort, tool, feature, type, row, log, nmarkers -> 
             def cnv  = row[0]
@@ -69,7 +73,8 @@ workflow visualize_cnv {
     }
 
     emit:
-    annotated
+    segments = annotated.segments
+    genes    = annotated.gene
     tables
     heatmaps
     scatter_plots
