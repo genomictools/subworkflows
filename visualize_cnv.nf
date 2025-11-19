@@ -8,23 +8,19 @@ include { HEATMAP }   from '../modules/cnvr/heatmap.nf'
 include { SCATTER }   from '../modules/cnvr/scatter.nf'
 
 format_ch   = Channel.of(params.format.split(','))
-features_ch = Channel.of(params.features.split(','))
 
 workflow visualize_cnv {
     take: 
     calls
     pfb
     signal
-    genes
-    links
+    features
     genelist
 
     main:
     // annotate calls
     calls
-        | combine(genes)
-        | combine(links)
-        | combine(features_ch)
+        | combine(features)
         | ANNOTATE
         | filter { it.last().toInteger() > 1 }
         | set { annotated }
@@ -86,13 +82,18 @@ workflow {
         | map { row -> [ row.cohort, row.key, row.level, file(row.file), file(row.log), row.nmarkers ] }
     
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
-    genes   = Channel.fromPath(params.refgene)
-    links   = Channel.fromPath(params.reflink)
+    features_ch = Channel.from([
+            ['refgene', params.refgene],
+            ['refexon', params.refexon],
+            ['anno', params.anno]
+        ])
+        | filter { it[1] != null }
+        | map { [it[0], file(it[1])] }
 
     genelist_ch = Channel.empty()
         | ( params.genelist != null ? concat(Channel.of(file(params.genelist))) : Channel.empty() )
         | splitCsv(header: true)
         | map { row -> [ row.cohort, row.gene ] }
 
-    visualize_cnv(calls, pfb, signal, genes, links, genelist_ch)
+    visualize_cnv(calls, pfb, signal, features_ch, genelist_ch)
 }
