@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 include { FILTER }    from '../modules/penncnv/filter.nf'
 include { EXCLUDE }   from '../modules/penncnv/exclude.nf'
 include { CLEAN }     from '../modules/penncnv/clean.nf'
+include { REPORT }    from '../modules/penncnv/report.nf'
 include { CNVR }      from '../modules/cnvr/cnvr.nf'
 
 workflow clean_calls {
@@ -36,8 +37,17 @@ workflow clean_calls {
         | set { consensus }
     }
 
+    reports = Channel.empty()
+    if ( params.report ) {
+    calls
+        | filter { it[1] == 'penncnv' } // Only penncnv cnv reports supported
+        | ( params.filter ? REPORT : map { it } )
+        | set { reports }
+    }
+
     emit:
-    calls = cleaned
+    reports   = reports
+    calls     = cleaned
     consensus = consensus
 }
 
