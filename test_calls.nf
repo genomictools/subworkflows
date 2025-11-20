@@ -17,47 +17,65 @@ workflow test_calls {
     test
 
     main:
-    // CCTEST
+    // Return cohort, family name, family size and test
+    pedigree
+        | map { 
+            def lines = it[1].toFile().text.split('\n').findAll { !it.trim().isEmpty() }
+            def familyGroups = lines.groupBy { it.split(/\s+/)[0] }
+            
+            familyGroups.collect { fam, members ->
+                def size = members.size()
+                def type = fam == '0' ? 'cctest' : 
+                          size < 3 ? 'cctest' : 
+                          size == 3 ? 'trio' : 
+                          size == 4 ? 'quartet' : 'family'
+                [it[0], fam, size, type]
+            }
+        }
+        | flatMap()
+        | groupTuple(by: [0,3])
+        | branch {
+            cc  : it.last() == 'cctest'
+            fam : it.last() != 'cctest'
+        }
+        | set { test }
+
     calls
-        | combine(test)
-        | filter { it.last() == 'cctest' }
+        | combine(test.cc, by: 0)
         | combine(pedigree, by: 0)
         | combine(pfb)
         | CCTEST
-        | set { tested }
+        | set { cc_test }
 
-    // FAMILY
+    // Combined signal
     signal
         | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
         | groupTuple(by: [0,2]) 
-        | set { combined_signal}
+        | set { combined_signal }
 
     calls
-        | combine(test)
-        | filter { it.last() == 'family' }
-        | map {[ it[0], it[2], it[1], it[3], it[6] ]}
-        | combine(hmm, by: 1)
-        | map {[ it[1], it[2], it[0], it[3], it[4], it[5] ]}
-        | combine(pfb)
+        | combine(test.fam, by: 0)
         | combine(pedigree, by: 0)
+        | combine(pfb)
+        | map { item -> [0, 2, 1, *(3..<item.size())].collect { item[it] } }
+        | combine(hmm, by: 1)
+        | map { item -> [1, 2, 0, *(3..<item.size())].collect { item[it] } }
         | combine(combined_signal, by: 0)
         | FAMILY
-        // | set { tested }
-        | view
+        | set { family_test }
 
     // Validation
     consensus
-        | combine(test)
-        | filter { it.last() == 'validate' }
-        | combine(hmm, by: 1)
-        | map {[ it[1], it[0], it[3], it[6], it[7] ]}
+        | combine(Channel.of ("validate"))
         | combine(pfb)
+        | combine(hmm, by: 1)
+        | map { item -> [1, 0, *(2..<item.size())].collect { item[it] } }
         | combine(combined_signal, by: 0)
         | VALIDATE
-        | set { tested }
+        | set { validation_test }
 
-    emit:
-    tested = tested
+    // emit:
+    // tested = tested
 }
 
 workflow {
