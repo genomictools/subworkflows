@@ -2,63 +2,84 @@
 
 nextflow.enable.dsl=2
 
-include { EXTRACT }   from '../modules/penncnv/extract.nf'
+include { EXTRACT }   from '../modules/rocker/extract.nf'
+include { GENOTYPE }  from '../modules/rocker/genotype.nf'
+include { MERGE }     from '../modules/rocker/merge.nf'
 include { ADJUST }    from '../modules/penncnv/adjust.nf'
 
 workflow prepare_signal {
     take: 
-    gtc
+    signal
     pfb
     gcm
 
     main:
-    // Extract signal
-    gtc
-        | ( params.extract ? combine(pfb) : map { it } )
-        | ( params.extract ? EXTRACT : map { it } )
-        | map { cohort, key, level, files ->
-            def level_list = level.tokenize(',')
-            def files_list = files instanceof List ? files : [files]
-            def nmark_list = files_list.collect { new File(it.toString()).readLines().size() }
-            def log_list   = files_list.collect { Path.of(it.baseName + ".log") }
-            [ cohort, key, level_list, files_list, log_list, nmark_list ]
+    // Map & Branch signal by level
+    signal
+        | map { cohort, key, level, file ->
+            def log = Path.of("${cohort}.${key}.raw.log")
+            def nmarkers = file.readLines().size()
+            [ cohort, key, level, file, log, nmarkers ]
         }
-        | transpose
-        | filter { it.last().toInteger() > 1 }
+        | branch { 
+            raw : it[2] == 'raw'
+            gtc : it[2] == 'gtc'
+         }
         | set { signal }
 
-    // Genotype
-    signal
-        | filter { it[2] == 'genotype' }
-        | set { genotype }
+    // Extract raw signals from gtc
+    signal.gtc
+        | EXTRACT
+        | concat(signal.raw)
+        | set { raw }
 
     // Adjust with GC
-    adjust = Channel.empty()
     if ( params.adjust ) {
-        signal
-            | filter { it[2] == 'raw' }
+        Channel.empty()
+            | concat(raw)
             | combine(gcm)
             | ADJUST
             | filter { it.last().toInteger() > 1 }
             | set { adjust }
     }
 
+    // Merge with pfb, when tools include quantisnp, or rgada
+    if ( params.tools.contains('quantisnp') || params.tools.contains('rgada') ) {
+        Channel.empty()
+            | concat(raw)
+            | combine(pfb)
+            | MERGE
+            | filter { it.last().toInteger() > 1 }
+            | set { merged }
+    }
+
+    // Extract genotypes, when tools include plink and type include roh
+    if ( params.tools.contains('plink') && params.type.contains('roh') ) {
+        Channel.empty()
+            | concat(signal.gtc)
+            | GENOTYPE
+            | set { genotypes }
+    }
+
     // Combine
-    signal
+    Channel.empty()
+        | concat(signal.gtc)
+        | concat(raw)
         | concat(adjust)
+        | concat(merged)
         | set { signal }
 
     emit:
     signal
-    genotype
+    genotypes
 }
 
 workflow {
-    gtc_ch = Channel.fromPath(params.cohorts)
+    signal_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, row.level, file(row.file) ] }
     pfb    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm    = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
-    prepare_signal(gtc_ch, pfb, gcm)
+    prepare_signal(signal_ch, pfb, gcm)
 }
