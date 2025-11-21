@@ -14,7 +14,6 @@ workflow test_calls {
     pedigree
     pfb
     hmm 
-    test
 
     main:
     // Return cohort, family name, family size and test
@@ -84,7 +83,6 @@ workflow {
     pedigree= Channel.fromPath(params.pedigree) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb)      | map { [ it.simpleName, it ] }
     hmm     = Channel.fromPath(params.hmm)      | map { [ it.simpleName, it ] }
-    tests   = Channel.of(params.tests.split(','))
 
-    test_calls(signal, calls, pedigree, pfb, hmm, tests)
+    test_calls(signal, calls, pedigree, pfb, hmm)
 }
