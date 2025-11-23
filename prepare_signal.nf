@@ -14,6 +14,9 @@ workflow prepare_signal {
     gcm
 
     main:
+    // Initialize channels
+    raw = adjust = merged = Channel.empty()
+
     // Map & Branch signal by level
     signal
         | map { cohort, key, level, file ->
@@ -35,8 +38,7 @@ workflow prepare_signal {
 
     // Adjust with GC
     if ( params.adjust ) {
-        Channel.empty()
-            | concat(raw)
+        raw
             | combine(gcm)
             | ADJUST
             | filter { it.last().toInteger() > 1 }
@@ -45,8 +47,7 @@ workflow prepare_signal {
 
     // Merge with pfb, when tools include quantisnp, or rgada
     if ( params.tools.contains('quantisnp') || params.tools.contains('rgada') ) {
-        Channel.empty()
-            | concat(raw)
+        raw
             | combine(pfb)
             | MERGE
             | filter { it.last().toInteger() > 1 }
@@ -55,15 +56,13 @@ workflow prepare_signal {
 
     // Extract genotypes, when tools include plink and type include roh
     if ( params.tools.contains('plink') && params.type.contains('roh') ) {
-        Channel.empty()
-            | concat(signal.gtc)
+        signal.gtc
             | GENOTYPE
             | set { genotypes }
     }
 
     // Combine
-    Channel.empty()
-        | concat(signal.gtc)
+    signal.gtc
         | concat(raw)
         | concat(adjust)
         | concat(merged)
