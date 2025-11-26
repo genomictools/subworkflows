@@ -12,19 +12,17 @@ workflow clean_calls {
     take: 
     calls
     pfb
-    exclude
     cohort_size
 
     main:
     calls
         | filter { it[2] == 'cnv' } // TODO: remove when other types are supported
-        | ( params.filter ? FILTER       : map { it } )
+        | ( params.filter ? FILTER : map { it } )
         | filter { it.last().toInteger() > 0 }
-        | ( params.exclude ? combine(exclude) : map { it } )
-        | ( params.exclude ? EXCLUDE          : map { it } )
+        | ( params.exclude_regions != null ? EXCLUDE : map { it } )
         | filter { it.last().toInteger() > 0 }
         | ( params.clean ? combine(pfb) : map { it } )
-        | ( params.clean  ? CLEAN        : map { it } )
+        | ( params.clean ? CLEAN : map { it } )
         | filter { it.last().toInteger() > 0 }
         | set { cleaned }
     
@@ -40,7 +38,7 @@ workflow clean_calls {
     reports = Channel.empty()
     if ( params.report ) {
     calls
-        | filter { it[1] == 'penncnv' } // Only penncnv cnv reports supported
+        | filter { it[1] == 'penncnv' && it[2] == 'cnv' } // Only penncnv cnv reports supported
         | ( params.filter ? REPORT : map { it } )
         | set { reports }
     }
@@ -54,7 +52,7 @@ workflow clean_calls {
 workflow {
     calls   = Channel.fromPath(params.cnv) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
-    exclude = Channel.fromPath(params.exclude_regions)
     cohort_size = calls.count().map { it as Integer }
+
     clean_calls(calls, pfb, exclude, cohort_size)
 }

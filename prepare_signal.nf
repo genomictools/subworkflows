@@ -12,11 +12,11 @@ workflow prepare_signal {
     signal
     pfb
     gcm
+    pedigree
 
     main:
     // Initialize channels
     raw = adjust = merged = Channel.empty()
-
     // Map & Branch signal by level
     signal
         | map { cohort, key, level, file ->
@@ -57,6 +57,8 @@ workflow prepare_signal {
     // Extract genotypes, when tools include plink and type include roh
     if ( params.tools.contains('plink') && params.type.contains('roh') ) {
         signal.gtc
+            | combine(pfb)
+            | combine(pedigree, by: 0)
             | GENOTYPE
             | set { genotypes }
     }
@@ -77,8 +79,11 @@ workflow {
     signal_ch = Channel.fromPath(params.cohorts)
         | splitCsv(header: true, sep: ',')
         | map { row -> [ row.cohort, row.key, row.level, file(row.file) ] }
+    pedigree_ch = Channel.fromPath(params.cohorts)
+        | splitCsv(header: true, sep: ',')
+        | map { row -> [ row.cohort, file(row.pedigree) ] }
     pfb    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm    = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
-    prepare_signal(signal_ch, pfb, gcm)
+    prepare_signal(signal_ch, pfb, gcm, pedigree_ch)
 }

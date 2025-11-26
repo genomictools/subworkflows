@@ -13,32 +13,33 @@ workflow test_calls {
     consensus
     pedigree
     pfb
-    hmm 
 
     main:
-    // Return cohort, family name, family size and test
+    // TEST
     pedigree
-        | map { 
-            def lines = it[1].toFile().text.split('\n').findAll { !it.trim().isEmpty() }
+        | flatMap { cohort, file ->
+            def lines = file.text.readLines().findAll { it.trim() }
             def familyGroups = lines.groupBy { it.split(/\s+/)[0] }
-            
             familyGroups.collect { fam, members ->
-                def size = members.size()
-                def type = fam == '0' ? 'cctest' : 
-                          size < 3 ? 'cctest' : 
-                          size == 3 ? 'trio' : 
-                          size == 4 ? 'quartet' : 'family'
-                [it[0], fam, size, type]
+                def sample_ids = members.collect { it.split(/\s+/)[1] }
+                def size = sample_ids.size()
+                def type = (fam == '0' || size < 3) ? 'cctest'
+                          : size == 3 ? 'trio'
+                          : size == 4 ? 'quartet'
+                          : 'family'
+                def famid = size >= 3 ? fam : '0'
+                [ cohort, famid, type, sample_ids ]
             }
         }
-        | flatMap()
-        | groupTuple(by: [0,3])
+        | groupTuple(by: [0,1,2])
+        | map { cohort, famid, type, sample_ids -> [ cohort, sample_ids.flatten(), sample_ids.flatten().size(), famid, type ] }
         | branch {
             cc  : it.last() == 'cctest'
             fam : it.last() != 'cctest'
         }
         | set { test }
 
+    // CCTEST
     calls
         | combine(test.cc, by: 0)
         | combine(pedigree, by: 0)
@@ -46,35 +47,42 @@ workflow test_calls {
         | CCTEST
         | set { cc_test }
 
-    // Combined signal
-    signal
-        | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
-        | groupTuple(by: [0,2]) 
-        | set { combined_signal }
+    // FAMILY
+    test.fam
+        | transpose
+        | combine(signal, by: [0,1])
+        | ( params.adjust ? filter { it[5] == 'adjusted' } : filter { it[5] == 'raw' } )
+        | groupTuple(by: [0,2,3,4,5])
+        | set { family_signal }
 
     calls
-        | combine(test.fam, by: 0)
+        | combine(family_signal, by: 0)
         | combine(pedigree, by: 0)
         | combine(pfb)
-        | map { item -> [0, 2, 1, *(3..<item.size())].collect { item[it] } }
-        | combine(hmm, by: 1)
-        | map { item -> [1, 2, 0, *(3..<item.size())].collect { item[it] } }
-        | combine(combined_signal, by: 0)
         | FAMILY
         | set { family_test }
 
-    // Validation
+    // VALIDATE
+    signal
+        | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
+        | groupTuple(by: [0,2])
+        | set { combined_signal }
+
     consensus
         | combine(Channel.of ("validate"))
-        | combine(pfb)
-        | combine(hmm, by: 1)
-        | map { item -> [1, 0, *(2..<item.size())].collect { item[it] } }
         | combine(combined_signal, by: 0)
+        | combine(pfb)
         | VALIDATE
         | set { validation_test }
 
-    // emit:
-    // tested = tested
+    Channel.empty() 
+        | concat(cc_test)
+        | concat(family_test)
+        | concat(validation_test)
+        | set { tested }
+
+    emit:
+    tested = tested
 }
 
 workflow {
@@ -82,7 +90,6 @@ workflow {
     calls   = Channel.fromPath(params.cnv)      | map { [ it.simpleName, it ] }
     pedigree= Channel.fromPath(params.pedigree) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb)      | map { [ it.simpleName, it ] }
-    hmm     = Channel.fromPath(params.hmm)      | map { [ it.simpleName, it ] }
 
-    test_calls(signal, calls, pedigree, pfb, hmm)
+    test_calls(signal, calls, pedigree, pfb)
 }

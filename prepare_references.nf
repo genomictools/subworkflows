@@ -2,7 +2,8 @@
 
 nextflow.enable.dsl=2
 
-include { PFB }         from '../modules/bcftools/pfb.nf'
+include { CAF }         from '../modules/bcftools/caf.nf'
+include { PFB }         from '../modules/rocker/pfb.nf'
 include { GCM }         from '../modules/penncnv/gcm.nf'
 
 workflow prepare_references {
@@ -13,19 +14,22 @@ workflow prepare_references {
 
     main:
     snplist = Channel.fromPath(params.snplist)
+        | splitText(by: params.chunk, file: true)
+        | map { file -> tuple( "snps_${file.name.tokenize('\\.')[-2].toInteger()}", file ) }
+        
     dbsnp   = Channel.fromFilePairs(params.dbsnp, flat: true)
+        | CAF
     gc      = Channel.fromPath(params.gc)
 
     snplist 
-        | splitText(by: params.chunk, file: true)
-        | map { file -> tuple( "snps_${file.name.tokenize('\\.')[-2].toInteger()}", file ) }
         | combine(dbsnp)
         | PFB
+        | groupTuple(by: 0)
         | combine(gc)
         | GCM
 
-    PFB.out | collectFile(keepHeader: true) | set { pfb }
-    GCM.out | collectFile(keepHeader: true) | set { gcm }
+    PFB.out | collectFile(keepHeader: true, storeDir: "${params.output_dir}/ref") { [ "${it[0]}.pfb", it[2] ] } | set { pfb }
+    GCM.out | collectFile(keepHeader: true, storeDir: "${params.output_dir}/ref") { [ "${it[0]}.gcm", it[2] ] } | set { gcm }
 
     emit:
     pfb
