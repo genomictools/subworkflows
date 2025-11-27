@@ -2,19 +2,26 @@
 
 nextflow.enable.dsl=2
 
+include { ROH }         from '../modules/plink/roh.nf'
 include { CCTEST }      from '../modules/penncnv/cctest.nf'
 include { FAMILY }      from '../modules/penncnv/family.nf'
 include { VALIDATE }    from '../modules/penncnv/validate.nf'
 
 workflow test_calls {
     take:
-    signal 
+    signal
+    genotypes
     calls
     consensus
     pedigree
     pfb
 
     main:
+    // ROH
+    genotypes
+        | ROH
+        | set { roh }
+
     // TEST
     pedigree
         | flatMap { cohort, file ->
@@ -87,9 +94,10 @@ workflow test_calls {
 
 workflow {
     signal  = Channel.fromPath(params.signal)   | map { [ it.simpleName, it ] }
+    genotypes  = Channel.fromPath(params.genotypes)   | map { [ it.simpleName, it ] }
     calls   = Channel.fromPath(params.cnv)      | map { [ it.simpleName, it ] }
     pedigree= Channel.fromPath(params.pedigree) | map { [ it.simpleName, it ] }
     pfb     = Channel.fromPath(params.pfb)      | map { [ it.simpleName, it ] }
 
-    test_calls(signal, calls, pedigree, pfb)
+    test_calls(signal, genotypes, calls, pedigree, pfb)
 }

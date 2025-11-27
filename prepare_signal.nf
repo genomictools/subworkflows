@@ -55,7 +55,7 @@ workflow prepare_signal {
     }
 
     // Extract genotypes, when tools include plink and type include roh
-    if ( params.tools.contains('plink') && params.type.contains('roh') ) {
+    if ( params.roh ) {
         signal.gtc
             | combine(pfb)
             | combine(pedigree, by: 0)
