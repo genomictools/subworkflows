@@ -14,6 +14,10 @@ workflow clean_calls {
     cohort_size
 
     main:
+    // separate LOH
+    calls | filter { it[2] == 'loh' } | set { loh }
+
+    // clean
     calls
         | filter { it[2] == 'cnv' } // TODO: remove when other types are supported
         | ( params.filter ? FILTER : map { it } )
@@ -37,6 +41,7 @@ workflow clean_calls {
     emit:
     calls     = cleaned
     consensus = consensus
+    loh       = loh
 }
 
 workflow {

@@ -44,8 +44,13 @@ workflow visualize_cnv {
     }
 
     // plots
-    genelist_ch = Channel.fromPath(params.genelist) | map { ['refgene', it.readLines()] }
-    genelist_ch | transpose | set { genelist_ch_t }
+    Channel.fromPath(params.genelist)
+        | map { ['refgene', it.readLines()] }
+        | set { genelist_ch }
+
+    genelist_ch
+        | transpose
+        | set { genelist_ch_t }
 
     // heatmpas
     Channel.empty() | set { heatmaps }

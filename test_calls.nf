@@ -90,6 +90,7 @@ workflow test_calls {
 
     emit:
     tested = tested
+    roh    = roh
 }
 
 workflow {

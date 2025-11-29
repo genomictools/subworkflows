@@ -16,6 +16,7 @@ workflow call_alternates {
 
     main:
     tools = Channel.of(params.tools.split(','))
+
     // PENNCNV
     signal
         | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )

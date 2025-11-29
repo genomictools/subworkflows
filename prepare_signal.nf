@@ -17,6 +17,7 @@ workflow prepare_signal {
     main:
     // Initialize channels
     raw = adjust = merged = Channel.empty()
+
     // Map & Branch signal by level
     signal
         | map { cohort, key, level, file ->
@@ -27,7 +28,7 @@ workflow prepare_signal {
         | branch { 
             raw : it[2] == 'raw'
             gtc : it[2] == 'gtc'
-         }
+        }
         | set { signal }
 
     // Extract raw signals from gtc
