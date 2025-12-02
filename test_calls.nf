@@ -2,6 +2,7 @@
 
 nextflow.enable.dsl=2
 
+include { GENOTYPE }    from '../modules/rocker/genotype.nf'
 include { ROH }         from '../modules/plink/roh.nf'
 include { CCTEST }      from '../modules/penncnv/cctest.nf'
 include { FAMILY }      from '../modules/penncnv/family.nf'
@@ -18,7 +19,10 @@ workflow test_calls {
 
     main:
     // ROH
-    genotypes
+    genotypes 
+        | combine(pfb)
+        | combine(pedigree, by: 0)
+        | GENOTYPE
         | ROH
         | set { roh }
 

@@ -3,7 +3,6 @@
 nextflow.enable.dsl=2
 
 include { EXTRACT }   from '../modules/rocker/extract.nf'
-include { GENOTYPE }  from '../modules/rocker/genotype.nf'
 include { MERGE }     from '../modules/rocker/merge.nf'
 include { ADJUST }    from '../modules/penncnv/adjust.nf'
 
@@ -12,7 +11,6 @@ workflow prepare_signal {
     signal
     pfb
     gcm
-    pedigree
 
     main:
     // Initialize channels
@@ -48,20 +46,11 @@ workflow prepare_signal {
 
     // Merge with pfb, when tools include quantisnp, or rgada
     if ( params.tools.contains('quantisnp') || params.tools.contains('rgada') ) {
-        raw
+        adjust
             | combine(pfb)
             | MERGE
             | filter { it.last().toInteger() > 1 }
             | set { merged }
-    }
-
-    // Extract genotypes, when tools include plink and type include roh
-    if ( params.roh ) {
-        signal.gtc
-            | combine(pfb)
-            | combine(pedigree, by: 0)
-            | GENOTYPE
-            | set { genotypes }
     }
 
     // Combine
@@ -73,7 +62,6 @@ workflow prepare_signal {
 
     emit:
     signal
-    genotypes
 }
 
 workflow {
@@ -86,5 +74,5 @@ workflow {
     pfb    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
     gcm    = Channel.fromPath(params.gcm) | map { [ it.simpleName, it ] }
 
-    prepare_signal(signal_ch, pfb, gcm, pedigree_ch)
+    prepare_signal(signal_ch, pfb, gcm)
 }

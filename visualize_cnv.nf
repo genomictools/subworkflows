@@ -71,7 +71,7 @@ workflow visualize_cnv {
         | multiMap { cohort, tool, feature, type, row, log, nmarkers -> 
             def cnv    = row[0].replaceAll(' +', '\t').split('\t')
             def region = cnv[0].replaceAll(':|-', '\\_')
-            def sample = cnv[4].split('\\.')[1]
+            def sample = cnv[4]
             def gene   = row[1].split(',').toList()
             samples  : [ cohort, sample, type, tool, region ]
             features : [ feature, gene, region ]
