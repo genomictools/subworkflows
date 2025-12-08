@@ -9,6 +9,7 @@ include { GCM } from '../modules/penncnv/gcm.nf'
 workflow prepare_references {
     take:
     snplist
+    known_sites
     dbsnp
     gc
 
@@ -22,9 +23,11 @@ workflow prepare_references {
     Channel.fromPath(gc) | set { gc }
 
     // Prepare PFB file
-    Channel.fromPath(snplist)
+    Channel.empty()
+        | concat(Channel.fromPath(snplist))
+        | ( params.known_sites != null ? concat(Channel.fromPath(known_sites)) : identity() )
         | splitText(by: params.chunk, file: true)
-        | map { file -> tuple( "snps_${file.name.tokenize('\\.')[-2].toInteger()}", file ) }
+        | map { file -> tuple( "${file.name.tokenize('\\.')[0]}.${file.name.tokenize('\\.')[-2].toInteger()}", file ) }
         | combine(dbsnp)
         | PFB
         | collectFile(
@@ -50,5 +53,5 @@ workflow prepare_references {
 }
 
 workflow {
-    ref = prepare_references(params.snplist, params.dbsnp, params.gc)
+    ref = prepare_references(params.snplist, params.known_sites, params.dbsnp, params.gc)
 }
