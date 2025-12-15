@@ -27,45 +27,23 @@ workflow visualize_cnv {
         | combine(features)
         | ANNOTATE
         | filter { it.last().toInteger() > 1 }
-        | branch { 
-            gene     : it[2] == 'refgene'
-            segments : it[2] == 'anno'
-         }
-        | set { annotated }
-    
+        | set { annotations }
+
     // export as tables
     format_ch = Channel.of(params.format.split(','))
     Channel.empty() | set { tables }
     if ( params.export ) {
-    annotated.gene
+    annotations
         | combine(format_ch)
         | EXPORT
         | set { tables }
     }
 
-    // plots
-    Channel.of(
-            params.genelist ? ['refgene', params.genelist] : null,
-            params.bandlist ? ['anno', params.bandlist] : null
-        )
-        | filter { it != null }
-        | map { [it.first(), file(it.last()).readLines()] }
-        // | filter { it.first() == 'refgene' }
-        | set { genelist_ch }
-
-    genelist_ch
-        | transpose
-        | set { genelist_ch_t }
-
     // heatmpas
     Channel.empty() | set { heatmaps }
     if ( params.heatmap ) {
-    annotated.gene
-        | concat(annotated.segments)
+    annotations
         | filter { it.last().toInteger() > 1 }
-        | map { tuple(it[2], *it[0..it.size()-1]) }
-        | combine(genelist_ch, by: 0)
-        | map { tuple(*it[1..it.size()-1]) }
         | HEATMAP
         | set { heatmaps }
     }
@@ -74,45 +52,35 @@ workflow visualize_cnv {
     Channel.empty() | set { scatter_plots }
     if ( params.scatter ) {
     // get samples and features
-    annotated.gene
+    annotations
         | splitCsv(elem: 4, header: false, strip: true, sep: "\t")
-        | multiMap { cohort, tool, feature, type, row, log, nmarkers -> 
+        | map { cohort, tool, feature, type, row, log, nmarkers -> 
             def cnv    = row[0].replaceAll(' +', '\t').split('\t')
             def region = cnv[0].replaceAll(':|-', '\\_')
             def sample = cnv[4]
-            def gene   = row[1].split(',').toList()
-            samples  : [ cohort, sample, type, tool, region ]
-            features : [ feature, gene, region ]
+
+            if      ( feature == 'refgene' ) { select_list = params.genelist } 
+            else if ( feature == 'anno' )    { select_list = params.bandlist }
+            def select_list  = file(select_list).readLines()
+
+            def feature_list = row[1].split(',').toList().intersect(select_list)
+            def n_features   = feature_list.size()
+
+            return [ cohort, sample, type, tool, region, feature, feature_list, n_features ]
         }
-        | set { annotations }
-
-    // subset feagures
-    annotations.features
-        | transpose
-        | combine(genelist_ch_t, by: [0,1])
-        | unique
-        | groupTuple(by: [0,2])
-        | map { tuple(it[-1], *it[0..it.size()-2]) }
-        | set { anno_features }
-
-    // combine signal with annotations, and plot
-    signal
-        | ( params.adjust ? filter { it[2] == 'adjusted' } : filter { it[2] == 'raw' } )
-        | combine(annotations.samples, by: [0,1])
-        | map { tuple(it[-1], *it[0..it.size()-2]) }
-        | combine(anno_features, by: 0)
-        | map { tuple(*it[1..it.size()-1], it[0]) }
+        | filter { it.last().toInteger() > 0 }
+        | combine(signal, by: [0,1])
+        | ( params.adjust ? filter { it[8] == 'adjusted' } : filter { it[8] == 'raw' } )
         | combine(pfb)
         | SCATTER
-        | set { scatter_plots }
+        | set { scatters }
     }
 
     emit:
-    segments = annotated.segments
-    genes    = annotated.gene
+    annotations
     tables
     heatmaps
-    scatter_plots
+    scatters
 }
 
 workflow {
