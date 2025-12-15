@@ -44,8 +44,13 @@ workflow visualize_cnv {
     }
 
     // plots
-    Channel.fromPath(params.genelist)
-        | map { ['refgene', it.readLines()] }
+    Channel.of(
+            params.genelist ? ['refgene', params.genelist] : null,
+            params.bandlist ? ['anno', params.bandlist] : null
+        )
+        | filter { it != null }
+        | map { [it.first(), file(it.last()).readLines()] }
+        // | filter { it.first() == 'refgene' }
         | set { genelist_ch }
 
     genelist_ch
@@ -56,8 +61,11 @@ workflow visualize_cnv {
     Channel.empty() | set { heatmaps }
     if ( params.heatmap ) {
     annotated.gene
+        | concat(annotated.segments)
         | filter { it.last().toInteger() > 1 }
-        | combine(genelist_ch)
+        | map { tuple(it[2], *it[0..it.size()-1]) }
+        | combine(genelist_ch, by: 0)
+        | map { tuple(*it[1..it.size()-1]) }
         | HEATMAP
         | set { heatmaps }
     }
