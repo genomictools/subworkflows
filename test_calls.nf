@@ -23,7 +23,7 @@ workflow test_calls {
         | combine(pfb)
         | combine(pedigree, by: 0)
         | GENOTYPE
-        | ( params.roh ? ROH : identity() )
+        | ( params.roh ? ROH : map { it } )
         | set { roh }
 
     // TEST
