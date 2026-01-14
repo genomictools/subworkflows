@@ -79,9 +79,16 @@ workflow call_alternates {
         | filter { it.last().toInteger() > 1 }
         | set { cnv_loh }
 
+    // Create a combined genotype file for (all) cohorts
+    combined_calls.gn
+        | collectFile(storeDir: "${params.output_dir}/") { [ "${it[1]}/all.${it[1]}.${it[2]}", it[3]] }
+        | map { file -> [ file.name.split('\\.')[0], file.name.split('\\.')[1], file.name.split('\\.')[2], file, file.countLines() ] }
+        | concat(combined_calls.gn)
+        | set { genotypes }
+
     emit:
     calls     = cnv_loh
-    genotypes = combined_calls.gn
+    genotypes = genotypes
     logs      = combined_calls.log
     reports   = combined_calls.qc
 }
