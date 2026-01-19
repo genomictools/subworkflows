@@ -7,11 +7,14 @@ include { QUANTISNP } from '../modules/quantisnp/quantisnp.nf'
 include { RGADA }     from '../modules/rgada/rgada.nf'
 include { CONVERT }   from '../modules/penncnv/convert.nf'
 include { SPLIT }     from '../modules/rocker/split.nf'
+include { GENOTYPE }  from '../modules/plink/genotype.nf'
+include { COMBINE }   from '../modules/plink/combine.nf'
 
 workflow call_alternates {
     take: 
     signal
     pfb
+    pedigree
 
     main:
     // Prepare signal channel
@@ -49,6 +52,9 @@ workflow call_alternates {
         | concat(rgada)
         | map { cohort, key, tool, type, file, nmarker -> [ cohort, key, tool, type.split(',').toList(), file, nmarker ]}
         | transpose
+        | set { calls }
+
+    calls
         | collectFile(storeDir: "${params.output_dir}/") { [ "${it[2]}/${it[0]}.${it[2]}.${it[3]}", it[4]] }
         | map { file -> [ file.name.split('\\.')[0], file.name.split('\\.')[1], file.name.split('\\.')[2], file, file.countLines() ] }
         | filter { it.last().toInteger() > 0 }
@@ -80,10 +86,17 @@ workflow call_alternates {
         | set { cnv_loh }
 
     // Create a combined genotype file for (all) cohorts
-    combined_calls.gn
-        | collectFile(storeDir: "${params.output_dir}/") { [ "${it[1]}/all.${it[1]}.${it[2]}", it[3]] }
-        | map { file -> [ file.name.split('\\.')[0], file.name.split('\\.')[1], file.name.split('\\.')[2], file, file.countLines() ] }
-        | concat(combined_calls.gn)
+    calls
+        | filter { it[3] == 'gn' }
+        | map { cohort, key, tool, type, file, nmarker -> [ cohort, key, tool, type, file, file.countLines() ]}
+        | filter { it.last().toInteger() > 0 }
+        | combine(pfb)
+        | combine(pedigree, by: 0)
+        | GENOTYPE
+        | map { cohort, tool, key, bim, bed, fam, log, n_samples, n_variants -> [ "all", tool, key, bim, bed, fam, log, n_samples, n_variants ]}
+        | concat(GENOTYPE.out)
+        | groupTuple(by: [0,1])
+        | COMBINE
         | set { genotypes }
 
     emit:
@@ -99,6 +112,7 @@ workflow {
         | map { row -> [ row.cohort, row.key, row.level, file(row.file), file(row.log), row.nmarkers ] }
 
     pfb_ch    = Channel.fromPath(params.pfb) | map { [ it.simpleName, it ] }
+    pedigree_ch = Channel.fromPath(params.pedigree) | map { [ it.simpleName, it ] }
 
-    call_alternates(signal_ch, pfb_ch)
+    call_alternates(signal_ch, pfb_ch, pedigree_ch)
 }

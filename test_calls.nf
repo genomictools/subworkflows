@@ -2,7 +2,6 @@
 
 nextflow.enable.dsl=2
 
-include { GENOTYPE }    from '../modules/rocker/genotype.nf'
 include { ROH }         from '../modules/plink/roh.nf'
 include { RELATIONS }   from '../modules/plink/relations.nf'
 include { CCTEST }      from '../modules/penncnv/cctest.nf'
@@ -19,26 +18,13 @@ workflow test_calls {
     pfb
 
     main:
-    // Genotypes
-    pedigree
-        | collectFile() { [ "all.ped", it.last()] }
-        | map {[ 'all', it ] }
-        | concat( pedigree )
-        | set { pedigree_all }
-
-    genotypes 
-        | combine(pfb)
-        | combine(pedigree_all, by: 0)
-        | GENOTYPE
-        | set { lgen }
-
     // ROH
-    lgen
+    genotypes
         | ( params.roh ? ROH : map { it } )
         | set { roh }
 
     // RELATIONS
-    lgen
+    genotypes
         | ( params.relations ? RELATIONS : map { it } )
         | set { relations }
 
