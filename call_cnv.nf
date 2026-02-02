@@ -21,10 +21,9 @@ workflow call_cnv {
         | set { exons }
 
     // Count reads in exonic regions for all samples
-    fasta = Channel.of(params.fasta)
     exons
         | combine( cohorts )
-        | combine( fasta )
+        | combine( Channel.fromPath(params.fasta) )
         | COUNT
         | filter { it.last().toInteger() > params.coverage }
         | branch {

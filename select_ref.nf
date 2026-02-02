@@ -30,7 +30,7 @@ workflow select_ref {
     // Count exons in reference samples
     exons
         | combine( cohorts )
-        | combine( Channel.of(params.fasta) )
+        | combine( Channel.fromPath(params.fasta) )
         | COUNT
         | filter { it.last().toInteger() > params.bins }
         | map { cohort, key, type, range, counts, coverage ->
