@@ -7,6 +7,7 @@ include { COUNT }   from '../modules/exomedepth/count.nf'
 include { CALL }    from '../modules/exomedepth/call.nf'
 include { PLOT }    from '../modules/exomedepth/plot.nf'
 include { REPORT }  from '../modules/rocker/report.nf'
+include { VISUALIZE } from '../modules/bamsignals/visualize.nf'
 
 workflow call_cnv {
     take:
@@ -40,6 +41,10 @@ workflow call_cnv {
             [ cohort, ref_key, type, gene, count, coverage, key ]
         }
         | combine( counts.controls, by: [0,1,3] )
+        | set { combined_counts }
+    
+    // Call CNVs
+    combined_counts
         | groupTuple(by: [0,2,4,6])
         | map { cohort, ref_key, gene, type, counts, coverage, key, ref_type, ref_counts, ref_coverage ->
             [ cohort, gene, key, counts, ref_counts ]
@@ -74,10 +79,26 @@ workflow call_cnv {
         | set { filtered_calls }
 
     // Plot genes with CNVs
-    if ( params.plot ) {
+    if ( params.plot_counts ) {
         calls
             | combine( filtered_calls, by: [0,1,2] )
             | PLOT
+    }
+
+    // Visualize bams
+    if ( params.plot_coverage ) {
+        combined_counts
+        | map { cohort, ref_key, gene, type, counts, coverage, key, ref_type, ref_counts, ref_coverage -> [ cohort, gene, key, ref_key ] }
+        | combine( filtered_calls, by: [0,1,2] )
+        | map { cohort, gene, key, ref_key -> [ gene, cohort, key, ref_key ] }
+        | combine(exons, by: 0)
+        | map { gene, cohort, key, ref_key, exons -> [ cohort, [key, ref_key], key, gene, exons ] }
+        | transpose
+        | combine(cohorts, by: [0,1])
+        | unique
+        | groupTuple(by: [0,3,2,4])
+        | map { cohort, all_keys, key, gene, exons, type, bam, bai ->[ cohort, gene, key, exons, bam, bai ]}
+        | VISUALIZE
     }
 
     emit:
