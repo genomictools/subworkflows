@@ -32,7 +32,7 @@ workflow select_ref {
         | combine( cohorts )
         | combine( Channel.fromPath(params.fasta) )
         | COUNT
-        | filter { it.last().toInteger() > params.bins }
+        | filter { it.last().toInteger() > params.bins * 5}
         | map { cohort, key, type, range, counts, coverage ->
             def new_key = ( type == 'control' ) ? 'control' : key
             [ cohort, new_key, counts ]
@@ -62,7 +62,6 @@ workflow select_ref {
         ) { [ "${it[0]}.select.tsv", it[2]] }
         | map { file -> [ file.name.split('\\.')[0], 'samples', file, file.readLines().size()] }
         | filter { it.last() > 1 }
-        | view
         | REPORT
         | set { reports }
 
