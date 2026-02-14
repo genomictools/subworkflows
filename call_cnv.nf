@@ -70,11 +70,9 @@ workflow call_cnv {
         | map { it[0,1,2,4]}
         | splitCsv(header: true, sep: '\t')
         | map { cohort, gene, key, cnv -> [ cohort: cohort, gene: gene, key: key ] + cnv }
-        | filter { 
-            it['BF'].toDouble()    >= params.BF & 
-            it['reads.ratio'].toDouble() >= params.dup_ratio || 
-            it['reads.ratio'].toDouble() <= params.del_ratio
-        }
+        | filter { it['BF'].toDouble() >= params.BF }
+        | filter { it['reads.ratio'] != 'NA' && it['reads.ratio'] != 'Inf'}
+        | filter { it['reads.ratio'].toDouble() >= params.dup_ratio || it['reads.ratio'].toDouble() <= params.del_ratio}
         | map { [it.cohort, it.gene, it.key] }
         | set { filtered_calls }
 
