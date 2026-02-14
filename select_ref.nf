@@ -32,7 +32,7 @@ workflow select_ref {
         | combine( cohorts )
         | combine( Channel.fromPath(params.fasta) )
         | COUNT
-        | filter { it.last().toInteger() > params.bins * 5}
+        | filter { it.last().toInteger() > params.bins * 100}
         | map { cohort, key, type, range, counts, coverage ->
             def new_key = ( type == 'control' ) ? 'control' : key
             [ cohort, new_key, counts ]
