@@ -13,6 +13,7 @@ workflow get_coordinates {
     main:
     COORDINATES(coords, genome, style)
         | transpose
+        | filter { it.last().size() > 0 }
         | set { bed }
 
         bed
