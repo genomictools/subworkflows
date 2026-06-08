@@ -30,6 +30,7 @@ workflow summarize_sharing {
     // Draw pedigrees
     if ( params.draw ) {
         variants
+            | groupTuple(by: 0)
             | combine(family, by: 0)
             | ATTACH
             | combine(to_draw, by: 0)
