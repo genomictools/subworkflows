@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 // Include modules
 include { ANNOTATE }    from '../modules/gatk/annotate.nf'
+include { INDEX }       from '../modules/bcftools/index.nf'
 
 workflow annotate_vcf {
     take:
@@ -14,6 +15,7 @@ workflow annotate_vcf {
     cohort_info
         | combine(annotations)
         | ANNOTATE
+        | INDEX
 
     emit:
     ANNOTATE.out
