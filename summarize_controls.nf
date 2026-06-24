@@ -14,7 +14,7 @@ workflow summarize_controls {
 
     main:
     cohorts
-        | SUBSET
+        | ( params.subset ? SUBSET : map { it + [ 1 ] } )
         | filter { it.last().toInteger() > 0 }
         | combine( categories )
         | FILTER
