@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { SUBSET as BCFTOOLS_SUBSET } from '../modules/bcftools/subset.nf'
+include { SUBSETSINGLEVCF as BCFTOOLS_SUBSET } from '../modules/bcftools/subset.nf'
 include { SUBSET as SAMTOOLS_SUBSET } from '../modules/samtools/subset.nf'
 
 include { EXTRACT }         from '../modules/jloh/extract.nf'
